@@ -1,0 +1,2223 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Portal TKA & Monitoring Try Out — SMP Al-Irsyad Surabaya</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --primary: #0B4D3B;
+      --primary-dark: #073629;
+      --primary-light: #E6F2EE;
+      --primary-border: #B7DDD1;
+      --accent: #D97706;
+      --accent-light: #FEF3C7;
+      --bg: #F4F7F6;
+      --surface: #FFFFFF;
+      --text: #0F172A;
+      --text-muted: #475569;
+      --text-soft: #64748B;
+      --border: #E2E8F0;
+      --success: #059669;
+      --success-bg: #D1FAE5;
+      --danger: #DC2626;
+      --danger-bg: #FEE2E2;
+      --info: #0284C7;
+      --info-bg: #E0F2FE;
+      --radius: 14px;
+      --shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.06);
+      --shadow-lg: 0 10px 30px -5px rgba(11, 77, 59, 0.14);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* TOP NAVBAR */
+    .topbar {
+      background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
+      color: #FFFFFF;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 4px 16px rgba(7, 54, 41, 0.2);
+    }
+
+    .topbar-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-badge {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.14);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 16px;
+      letter-spacing: 0.5px;
+      color: #FCD34D;
+      flex-shrink: 0;
+    }
+
+    .brand-title h1 {
+      font-size: 16px;
+      font-weight: 700;
+      line-height: 1.25;
+    }
+
+    .brand-title p {
+      font-size: 12px;
+      color: #CBE5DD;
+    }
+
+    .periode-box {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.12);
+      padding: 6px 12px;
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .periode-box label {
+      font-size: 12px;
+      color: #CBE5DD;
+      font-weight: 500;
+    }
+
+    .periode-box select {
+      background: #FFFFFF;
+      color: var(--primary-dark);
+      border: none;
+      border-radius: 7px;
+      padding: 5px 10px;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      outline: none;
+    }
+
+    /* NAVIGATION TABS */
+    .nav-bar {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .nav-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 20px;
+      display: flex;
+      gap: 6px;
+    }
+
+    .nav-btn {
+      background: transparent;
+      border: none;
+      border-bottom: 3px solid transparent;
+      padding: 14px 16px;
+      font-family: inherit;
+      font-size: 13.5px;
+      font-weight: 600;
+      color: var(--text-muted);
+      cursor: pointer;
+      white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+    }
+
+    .nav-btn:hover {
+      color: var(--primary);
+      background: #F8FAFC;
+    }
+
+    .nav-btn.active {
+      color: var(--primary);
+      border-bottom-color: var(--primary);
+      font-weight: 700;
+    }
+
+    .nav-pill {
+      background: var(--accent-light);
+      color: #92400E;
+      font-size: 10.5px;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 999px;
+    }
+
+    /* MAIN CONTAINER */
+    .container {
+      max-width: 1200px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 24px 20px 48px;
+      flex: 1;
+    }
+
+    .tab-panel {
+      display: none;
+      animation: fadeIn 0.25s ease;
+    }
+
+    .tab-panel.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* CARDS & GRIDS */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 22px;
+      box-shadow: var(--shadow);
+      margin-bottom: 20px;
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+
+    .card-title {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .card-subtitle {
+      font-size: 13px;
+      color: var(--text-soft);
+      margin-top: 2px;
+    }
+
+    /* HERO BANNER & COUNTDOWN */
+    .hero {
+      background: linear-gradient(135deg, #0B4D3B 0%, #116951 60%, #0D5944 100%);
+      color: #FFFFFF;
+      border-radius: 18px;
+      padding: 28px;
+      margin-bottom: 22px;
+      box-shadow: var(--shadow-lg);
+      display: grid;
+      grid-template-columns: 1.4fr 1fr;
+      gap: 24px;
+      align-items: center;
+    }
+
+    @media (max-width: 860px) {
+      .hero {
+        grid-template-columns: 1fr;
+        padding: 22px;
+      }
+    }
+
+    .hero-tag {
+      display: inline-block;
+      background: rgba(252, 211, 77, 0.18);
+      color: #FCD34D;
+      border: 1px solid rgba(252, 211, 77, 0.35);
+      font-size: 11.5px;
+      font-weight: 700;
+      padding: 4px 12px;
+      border-radius: 999px;
+      margin-bottom: 12px;
+      letter-spacing: 0.4px;
+    }
+
+    .hero h2 {
+      font-size: 24px;
+      font-weight: 800;
+      line-height: 1.3;
+      margin-bottom: 10px;
+    }
+
+    .hero p {
+      font-size: 14px;
+      color: #D1EAE2;
+      margin-bottom: 18px;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .countdown-card {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(6px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 14px;
+      padding: 18px;
+      text-align: center;
+    }
+
+    .countdown-label {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: #FCD34D;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .countdown-event {
+      font-size: 15px;
+      font-weight: 700;
+      margin-bottom: 14px;
+      color: #FFFFFF;
+    }
+
+    .countdown-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+    }
+
+    .cd-box {
+      background: rgba(7, 54, 41, 0.65);
+      border-radius: 10px;
+      padding: 10px 6px;
+    }
+
+    .cd-num {
+      font-size: 22px;
+      font-weight: 800;
+      line-height: 1.1;
+      color: #FFFFFF;
+    }
+
+    .cd-unit {
+      font-size: 11px;
+      color: #CBE5DD;
+      margin-top: 2px;
+    }
+
+    /* BUTTONS */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 10px 18px;
+      border-radius: 10px;
+      font-family: inherit;
+      font-size: 13.5px;
+      font-weight: 700;
+      cursor: pointer;
+      border: 1px solid transparent;
+      text-decoration: none;
+      transition: all 0.18s ease;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: #FFFFFF;
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-dark);
+    }
+
+    .btn-accent {
+      background: #F59E0B;
+      color: #1E1B18;
+    }
+
+    .btn-accent:hover {
+      background: #D97706;
+      color: #FFFFFF;
+    }
+
+    .btn-outline {
+      background: #FFFFFF;
+      color: var(--primary);
+      border-color: var(--primary-border);
+    }
+
+    .btn-outline:hover {
+      background: var(--primary-light);
+    }
+
+    .btn-ghost-light {
+      background: rgba(255, 255, 255, 0.14);
+      color: #FFFFFF;
+      border-color: rgba(255, 255, 255, 0.28);
+    }
+
+    .btn-ghost-light:hover {
+      background: rgba(255, 255, 255, 0.24);
+    }
+
+    .btn-sm {
+      padding: 7px 12px;
+      font-size: 12.5px;
+      border-radius: 8px;
+    }
+
+    .btn:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+
+    /* KPI GRID */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 22px;
+    }
+
+    @media (max-width: 900px) {
+      .kpi-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 480px) {
+      .kpi-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .kpi-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px;
+      box-shadow: var(--shadow);
+    }
+
+    .kpi-label {
+      font-size: 12.5px;
+      font-weight: 600;
+      color: var(--text-soft);
+      margin-bottom: 6px;
+    }
+
+    .kpi-val {
+      font-size: 26px;
+      font-weight: 800;
+      color: var(--primary);
+      line-height: 1.2;
+    }
+
+    .kpi-note {
+      font-size: 11.5px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    /* CHARTS GRID */
+    .charts-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+
+    @media (max-width: 900px) {
+      .charts-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .chart-wrap {
+      position: relative;
+      height: 290px;
+      width: 100%;
+    }
+
+    /* TIMELINE */
+    .timeline-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .timeline-item {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 14px 16px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: #FAFCFB;
+      flex-wrap: wrap;
+    }
+
+    .timeline-item.target-utama {
+      border-color: #F59E0B;
+      background: #FFFBEB;
+    }
+
+    .tl-date {
+      font-size: 12.5px;
+      font-weight: 700;
+      color: var(--primary);
+      margin-bottom: 2px;
+    }
+
+    .tl-title {
+      font-size: 14.5px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .tl-org {
+      font-size: 12.5px;
+      color: var(--text-soft);
+    }
+
+    /* BADGES */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 11.5px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .badge-success { background: var(--success-bg); color: #065F46; }
+    .badge-warning { background: var(--accent-light); color: #92400E; }
+    .badge-info    { background: var(--info-bg); color: #075985; }
+    .badge-neutral { background: #E2E8F0; color: #334155; }
+    .badge-danger  { background: var(--danger-bg); color: #991B1B; }
+
+    /* FORM & LOGIN SISWA */
+    .login-box {
+      max-width: 520px;
+      margin: 12px auto 24px;
+    }
+
+    .form-group {
+      margin-bottom: 14px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 6px;
+      color: var(--text);
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 11px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      font-family: inherit;
+      font-size: 14px;
+      color: var(--text);
+      transition: border-color 0.2s;
+      background: #FFFFFF;
+    }
+
+    .form-control:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+
+    /* STUDENT REPORT */
+    .student-banner {
+      background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+      color: #FFFFFF;
+      border-radius: var(--radius);
+      padding: 22px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .student-meta {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+      font-size: 13px;
+      color: #CBE5DD;
+    }
+
+    .student-meta span strong {
+      color: #FFFFFF;
+    }
+
+    .narasi-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+
+    @media (max-width: 768px) {
+      .narasi-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .narasi-box {
+      background: #F8FAFC;
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--primary);
+      border-radius: 12px;
+      padding: 15px 16px;
+    }
+
+    .narasi-box.accent-border {
+      border-left-color: var(--accent);
+    }
+
+    .narasi-box h4 {
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--primary);
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      margin-bottom: 6px;
+    }
+
+    .narasi-box p {
+      font-size: 13.5px;
+      color: var(--text);
+      line-height: 1.55;
+    }
+
+    /* TABLES */
+    .table-responsive {
+      width: 100%;
+      overflow-x: auto;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13.5px;
+      text-align: left;
+    }
+
+    thead th {
+      background: #F1F5F9;
+      color: var(--text);
+      font-weight: 700;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+
+    tbody td {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+
+    tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    tbody tr:hover {
+      background: #F8FAFC;
+    }
+
+    /* FILTER BAR KISI-KISI */
+    .filter-bar {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+      align-items: center;
+    }
+
+    .filter-chips {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .chip {
+      padding: 7px 14px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: #FFFFFF;
+      color: var(--text-muted);
+      font-family: inherit;
+      font-size: 12.5px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .chip.active, .chip:hover {
+      background: var(--primary);
+      color: #FFFFFF;
+      border-color: var(--primary);
+    }
+
+    /* RESOURCE CARDS (BANK SOAL & CBT) */
+    .resource-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+      gap: 16px;
+    }
+
+    .resource-card {
+      border: 1px solid var(--border);
+      border-radius: 13px;
+      padding: 18px;
+      background: #FFFFFF;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 14px;
+      box-shadow: var(--shadow);
+    }
+
+    /* CBT INTERFACE */
+    .cbt-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      background: var(--primary-dark);
+      color: #FFFFFF;
+      padding: 14px 18px;
+      border-radius: 12px;
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+    }
+
+    .cbt-timer {
+      background: rgba(255, 255, 255, 0.16);
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-weight: 800;
+      font-size: 15px;
+      color: #FCD34D;
+    }
+
+    .cbt-nav-nums {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+
+    .num-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      border: 1.5px solid var(--border);
+      background: #FFFFFF;
+      font-weight: 700;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    .num-btn.answered {
+      background: var(--primary-light);
+      border-color: var(--primary);
+      color: var(--primary-dark);
+    }
+
+    .num-btn.current {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: #FFFFFF;
+    }
+
+    .stimulus-box {
+      background: #F8FAFC;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      margin-bottom: 16px;
+      font-size: 14px;
+      white-space: pre-line;
+    }
+
+    .opsi-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .opsi-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 12px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .opsi-item:hover {
+      border-color: var(--primary);
+      background: #F8FAFC;
+    }
+
+    .opsi-item.selected {
+      border-color: var(--primary);
+      background: var(--primary-light);
+    }
+
+    .opsi-key {
+      width: 28px;
+      height: 28px;
+      border-radius: 7px;
+      background: #E2E8F0;
+      color: var(--text);
+      font-weight: 800;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .opsi-item.selected .opsi-key {
+      background: var(--primary);
+      color: #FFFFFF;
+    }
+
+    /* ALERTS & LOADER */
+    .alert {
+      padding: 13px 16px;
+      border-radius: 10px;
+      font-size: 13.5px;
+      margin-bottom: 16px;
+    }
+
+    .alert-danger  { background: var(--danger-bg); color: #991B1B; border: 1px solid #FECACA; }
+    .alert-warning { background: var(--accent-light); color: #92400E; border: 1px solid #FDE68A; }
+    .alert-info    { background: var(--info-bg); color: #075985; border: 1px solid #BAE6FD; }
+
+    .loader-wrap {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--text-soft);
+    }
+
+    .spinner {
+      width: 34px;
+      height: 34px;
+      border: 3.5px solid var(--primary-light);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 12px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 36px 16px;
+      color: var(--text-soft);
+      background: #F8FAFC;
+      border-radius: 12px;
+      border: 1px dashed var(--border);
+    }
+
+    /* FOOTER */
+    footer {
+      background: #FFFFFF;
+      border-top: 1px solid var(--border);
+      padding: 20px;
+      font-size: 12.5px;
+      color: var(--text-soft);
+    }
+
+    .footer-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    @media print {
+      .topbar, .nav-bar, .no-print, footer {
+        display: none !important;
+      }
+      .container {
+        padding: 0;
+        max-width: 100%;
+      }
+      .card {
+        box-shadow: none;
+        border: 1px solid #CBD5E1;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <div class="brand-badge">TKA</div>
+        <div class="brand-title">
+          <h1>Portal TKA &amp; Monitoring Try Out</h1>
+          <p>SMP Al-Irsyad Surabaya — Bidang Kurikulum &amp; Evaluasi</p>
+        </div>
+      </div>
+
+      <div class="periode-box">
+        <label for="selectPeriode">Tahun Pelajaran:</label>
+        <select id="selectPeriode" onchange="onChangePeriode()">
+          <option value="2026-27">2026/2027</option>
+        </select>
+      </div>
+    </div>
+  </header>
+
+  <!-- NAVIGATION -->
+  <nav class="nav-bar">
+    <div class="nav-inner">
+      <button class="nav-btn active" data-tab="beranda" onclick="switchTab('beranda')">
+        Beranda &amp; Statistik
+      </button>
+      <button class="nav-btn" data-tab="laporan" onclick="switchTab('laporan')">
+        Cek Laporan Siswa <span class="nav-pill">Wali Murid</span>
+      </button>
+      <button class="nav-btn" data-tab="kisikisi" onclick="switchTab('kisikisi')">
+        Kisi-Kisi TKA
+      </button>
+      <button class="nav-btn" data-tab="banksoal" onclick="switchTab('banksoal')">
+        Bank Soal &amp; Pembahasan
+      </button>
+      <button class="nav-btn" data-tab="latihan" onclick="switchTab('latihan')">
+        Latihan Mandiri CBT
+      </button>
+    </div>
+  </nav>
+
+  <!-- MAIN CONTENT -->
+  <main class="container">
+
+    <!-- LOADING INITIAL -->
+    <div id="globalLoader" class="loader-wrap">
+      <div class="spinner"></div>
+      <p>Menghubungkan ke Database Kurikulum SMP Al-Irsyad Surabaya...</p>
+    </div>
+
+    <!-- ERROR BANNER -->
+    <div id="globalError" class="alert alert-danger" style="display:none;"></div>
+
+    <!-- ============================================================
+         TAB 1: BERANDA & STATISTIK ANGKATAN
+         ============================================================ -->
+    <section id="tab-beranda" class="tab-panel">
+      <div class="hero">
+        <div>
+          <span class="hero-tag" id="heroPeriodeBadge">PERSIAPAN TKA KELAS IX</span>
+          <h2>Pantau Perkembangan Literasi &amp; Numerasi Secara Terukur</h2>
+          <p>
+            Akses rekapitulasi capaian Try Out angkatan, kisi-kisi resmi Tes Kemampuan Akademik (TKA),
+            unduh laporan analisis individual bertanda tangan elektronik, serta berlatih soal mandiri.
+          </p>
+          <div class="hero-actions">
+            <button class="btn btn-accent" onclick="switchTab('laporan')">
+              Cek Laporan &amp; Unduh PDF Siswa
+            </button>
+            <button class="btn btn-ghost-light" onclick="switchTab('kisikisi')">
+              Lihat Kisi-Kisi TKA
+            </button>
+          </div>
+        </div>
+
+        <div class="countdown-card">
+          <div class="countdown-label" id="cdLabel">HITUNG MUNDUR AGENDA BERIKUTNYA</div>
+          <div class="countdown-event" id="cdEventName">Memuat jadwal kegiatan...</div>
+          <div class="countdown-grid">
+            <div class="cd-box">
+              <div class="cd-num" id="cdDays">--</div>
+              <div class="cd-unit">Hari</div>
+            </div>
+            <div class="cd-box">
+              <div class="cd-num" id="cdHours">--</div>
+              <div class="cd-unit">Jam</div>
+            </div>
+            <div class="cd-box">
+              <div class="cd-num" id="cdMins">--</div>
+              <div class="cd-unit">Menit</div>
+            </div>
+            <div class="cd-box">
+              <div class="cd-num" id="cdSecs">--</div>
+              <div class="cd-unit">Detik</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- KPI RINGKASAN -->
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-label">Siswa Aktif Kelas IX</div>
+          <div class="kpi-val" id="kpiTotalSiswa">-</div>
+          <div class="kpi-note">Terdaftar pada periode aktif</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Try Out Terlaksana</div>
+          <div class="kpi-val" id="kpiJumlahTO">-</div>
+          <div class="kpi-note">Evaluasi bertahap Literasi &amp; Numerasi</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Peserta TKA Lengkap</div>
+          <div class="kpi-val" id="kpiSudahTKA">-</div>
+          <div class="kpi-note">Tercatat pada rekap TKA resmi</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Standar Target Sekolah</div>
+          <div class="kpi-val" id="kpiTargetNilai">65.00</div>
+          <div class="kpi-note">Acuan ketuntasan kompetensi</div>
+        </div>
+      </div>
+
+      <!-- GRAFIK ANGKATAN & ROMBEL -->
+      <div class="charts-grid">
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Tren Rata-Rata Kompetensi Angkatan</div>
+              <div class="card-subtitle">Perbandingan nilai Literasi, Numerasi, dan Gabungan per Try Out</div>
+            </div>
+          </div>
+          <div class="chart-wrap">
+            <canvas id="chartAngkatan"></canvas>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Perbandingan Capaian Antar Rombel</div>
+              <div class="card-subtitle">Rata-rata gabungan kelas IX-A hingga IX-D pada setiap Try Out</div>
+            </div>
+          </div>
+          <div class="chart-wrap">
+            <canvas id="chartRombel"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- TIMELINE KEGIATAN -->
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Linimasa Kegiatan Try Out &amp; TKA</div>
+            <div class="card-subtitle">Jadwal resmi persiapan hingga pelaksanaan ujian</div>
+          </div>
+        </div>
+        <div id="timelineContainer" class="timeline-list"></div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         TAB 2: CEK LAPORAN SISWA (WALI MURID)
+         ============================================================ -->
+    <section id="tab-laporan" class="tab-panel">
+      <!-- FORM LOGIN NIS + NISN -->
+      <div id="loginSiswaWrapper" class="card login-box">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Akses Laporan Capaian Individual</div>
+            <div class="card-subtitle">Masukkan NIS dan NISN Ananda untuk melihat grafik perkembangan &amp; mengunduh PDF ber-TTE</div>
+          </div>
+        </div>
+
+        <div id="loginError" class="alert alert-danger" style="display:none;"></div>
+
+        <form onsubmit="handleCekLaporan(event)">
+          <div class="form-group">
+            <label for="inputNis">Nomor Induk Siswa (NIS)</label>
+            <input type="text" id="inputNis" class="form-control" placeholder="Contoh: 12345" required />
+          </div>
+          <div class="form-group">
+            <label for="inputNisn">Nomor Induk Siswa Nasional (NISN — 10 Digit)</label>
+            <input type="text" id="inputNisn" class="form-control" placeholder="Contoh: 0101234567" maxlength="10" required />
+          </div>
+          <button type="submit" id="btnCekLaporan" class="btn btn-primary" style="width:100%;">
+            Tampilkan Laporan Ananda
+          </button>
+        </form>
+      </div>
+
+      <!-- HASIL LAPORAN SISWA -->
+      <div id="hasilLaporanWrapper" style="display:none;">
+        <div class="student-banner">
+          <div>
+            <span class="hero-tag" style="margin-bottom:6px;">LAPORAN CAPAIAN BELAJAR SISWA</span>
+            <h2 id="repNamaSiswa" style="font-size:22px; font-weight:800;">-</h2>
+            <div class="student-meta">
+              <span>NIS: <strong id="repNis">-</strong></span>
+              <span>NISN: <strong id="repNisn">-</strong></span>
+              <span>Kelas: <strong id="repRombel">-</strong></span>
+              <span>Tahun Ajaran: <strong id="repTahun">-</strong></span>
+            </div>
+          </div>
+
+          <div style="display:flex; gap:8px; flex-wrap:wrap;" class="no-print">
+            <button class="btn btn-outline btn-sm" onclick="window.print()">Cetak Halaman</button>
+            <button class="btn btn-ghost-light btn-sm" onclick="logoutSiswa()">Cek Siswa Lain</button>
+          </div>
+        </div>
+
+        <!-- KOTAK UNDUH PDF RESMI BER-TTE -->
+        <div class="card" id="pdfBoxCard">
+          <div class="card-header" style="margin-bottom:0;">
+            <div>
+              <div class="card-title">Dokumen Laporan Resmi (Tanda Tangan Elektronik)</div>
+              <div class="card-subtitle" id="pdfInfoSubtitle">Memeriksa ketersediaan berkas PDF resmi...</div>
+            </div>
+            <div id="pdfActionButtons" style="display:flex; gap:10px; flex-wrap:wrap;"></div>
+          </div>
+        </div>
+
+        <!-- 4 NARASI ANALISIS (IDENTIK DENGAN PDF TTE) -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Analisis Capaian &amp; Rekomendasi Pendampingan</div>
+              <div class="card-subtitle">Disusun otomatis berdasarkan tren nilai Literasi dan Numerasi Ananda</div>
+            </div>
+          </div>
+          <div id="kelengkapanAlert" class="alert alert-warning" style="display:none;"></div>
+          <div class="narasi-grid">
+            <div class="narasi-box">
+              <h4>1. Perkembangan Capaian</h4>
+              <p id="narasiPerkembangan">-</p>
+            </div>
+            <div class="narasi-box">
+              <h4>2. Perbandingan dengan Rombel</h4>
+              <p id="narasiPerbandingan">-</p>
+            </div>
+            <div class="narasi-box accent-border">
+              <h4>3. Capaian &amp; Kekuatan Kompetensi</h4>
+              <p id="narasiKompetensi">-</p>
+            </div>
+            <div class="narasi-box accent-border">
+              <h4>4. Rekomendasi Tindak Lanjut</h4>
+              <p id="narasiTindakLanjut">-</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- GRAFIK & TABEL NILAI SISWA -->
+        <div class="charts-grid">
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">Grafik Tren Nilai Ananda</div>
+                <div class="card-subtitle">Ananda vs Rata-Rata Rombel &amp; Angkatan</div>
+              </div>
+            </div>
+            <div class="chart-wrap">
+              <canvas id="chartSiswa"></canvas>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">Rincian Nilai per Try Out</div>
+                <div class="card-subtitle">Skala nilai 0 – 100 pada setiap tahap evaluasi</div>
+              </div>
+            </div>
+            <div class="table-responsive">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Tahap TO</th>
+                    <th>Literasi</th>
+                    <th>Numerasi</th>
+                    <th>Rata-Rata</th>
+                    <th>Rombel</th>
+                  </tr>
+                </thead>
+                <tbody id="tbodyNilaiSiswa"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- HASIL TKA RESMI (JIKA SUDAH ADA) -->
+        <div class="card" id="cardHasilTKA" style="display:none;">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Rekapitulasi Hasil Tes Kemampuan Akademik (TKA)</div>
+              <div class="card-subtitle">Hasil resmi pelaksanaan TKA</div>
+            </div>
+          </div>
+          <div id="kontenHasilTKA"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         TAB 3: KISI-KISI TKA
+         ============================================================ -->
+    <section id="tab-kisikisi" class="tab-panel">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Kisi-Kisi Tes Kemampuan Akademik (TKA)</div>
+            <div class="card-subtitle">Acuan materi, elemen konten, indikator kompetensi, dan level kognitif ujian</div>
+          </div>
+        </div>
+
+        <div class="filter-bar">
+          <div class="filter-chips" id="kisiFilterChips">
+            <button class="chip active" onclick="filterKisiMapel('SEMUA', this)">Semua Mapel</button>
+          </div>
+          <div style="flex:1; min-width:220px;">
+            <input type="text" id="searchKisiInput" class="form-control" style="padding:8px 12px; font-size:13px;"
+                   placeholder="Cari elemen konten, indikator, atau level..." oninput="renderKisiKisi()" />
+          </div>
+        </div>
+
+        <div id="kisiContainer"></div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         TAB 4: BANK SOAL & PEMBAHASAN
+         ============================================================ -->
+    <section id="tab-banksoal" class="tab-panel">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Arsip Bank Soal &amp; Pembahasan Try Out</div>
+            <div class="card-subtitle">Unduh naskah soal dan kunci pembahasan resmi untuk bahan belajar mandiri di rumah</div>
+          </div>
+        </div>
+        <div id="bankSoalContainer" class="resource-grid"></div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         TAB 5: LATIHAN MANDIRI CBT
+         ============================================================ -->
+    <section id="tab-latihan" class="tab-panel">
+      <div id="cbtLoader" class="loader-wrap" style="display:none;">
+        <div class="spinner"></div>
+        <p>Memuat paket latihan soal CBT...</p>
+      </div>
+
+      <!-- DAFTAR PAKET CBT -->
+      <div id="cbtLobbyWrapper" class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Simulasi Latihan Mandiri Berbasis Komputer (CBT)</div>
+            <div class="card-subtitle">Pilih paket latihan di bawah ini untuk menguji pemahaman beserta skor dan pembahasan instan</div>
+          </div>
+        </div>
+        <div id="paketLatihanContainer" class="resource-grid"></div>
+      </div>
+
+      <!-- RUANG UJIAN CBT -->
+      <div id="cbtExamWrapper" class="card" style="display:none;">
+        <div class="cbt-header">
+          <div>
+            <div style="font-size:12px; color:#CBE5DD;">SIMULASI LATIHAN MANDIRI</div>
+            <div id="cbtExamTitle" style="font-size:16px; font-weight:800;">-</div>
+          </div>
+          <div style="display:flex; align-items:center; gap:10px;">
+            <div class="cbt-timer" id="cbtTimerDisplay">00:00</div>
+            <button class="btn btn-accent btn-sm" onclick="selesaiUjianCBT(false)">Selesai &amp; Nilai</button>
+          </div>
+        </div>
+
+        <div id="cbtNavNumbers" class="cbt-nav-nums"></div>
+
+        <div id="cbtQuestionArea"></div>
+
+        <div style="display:flex; justify-content:space-between; margin-top:20px; gap:10px;">
+          <button class="btn btn-outline" id="btnPrevSoal" onclick="navSoal(-1)">&larr; Sebelumnya</button>
+          <button class="btn btn-primary" id="btnNextSoal" onclick="navSoal(1)">Berikutnya &rarr;</button>
+        </div>
+      </div>
+
+      <!-- HASIL & PEMBAHASAN CBT -->
+      <div id="cbtResultWrapper" class="card" style="display:none;">
+        <div class="card-header">
+          <div>
+            <div class="card-title" id="cbtResTitle">Hasil Simulasi Latihan</div>
+            <div class="card-subtitle">Evaluasi jawaban dan pembahasan setiap butir soal</div>
+          </div>
+          <button class="btn btn-outline btn-sm" onclick="kembaliKeLobbyCBT()">&larr; Pilih Paket Lain</button>
+        </div>
+
+        <div class="kpi-grid" style="grid-template-columns: repeat(3, 1fr);">
+          <div class="kpi-card">
+            <div class="kpi-label">Skor Akhir</div>
+            <div class="kpi-val" id="cbtResSkor">0</div>
+            <div class="kpi-note">Skala maksimal 100</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Jawaban Benar</div>
+            <div class="kpi-val" style="color:var(--success);" id="cbtResBenar">0</div>
+            <div class="kpi-note" id="cbtResTotalSoal">dari 0 soal</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Predikat Latihan</div>
+            <div class="kpi-val" style="font-size:20px; padding-top:4px;" id="cbtResPredikat">-</div>
+            <div class="kpi-note">Acuan target minimal 65</div>
+          </div>
+        </div>
+
+        <div id="cbtReviewList" style="display:flex; flex-direction:column; gap:14px;"></div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-inner">
+      <div>
+        <strong>SMP Al-Irsyad Surabaya</strong> — Sistem Informasi Monitoring Try Out &amp; TKA Terpadu
+      </div>
+      <div id="footerPengesahan">
+        Mengetahui: Kepala SMP Al-Irsyad Surabaya
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    /* =====================================================================
+       KONFIGURASI ENDPOINT API GOOGLE APPS SCRIPT
+       ===================================================================== */
+    const API_URL = 'https://script.google.com/macros/s/AKfycbyBgboAaV6XmiUCjqAEmoem0KDqtouMv46S3uHbdrw-9TKLcU395dKBz4RnsitbZbUmXg/exec';
+
+    let appState = {
+      periode: '',
+      initData: null,
+      kisiMapelFilter: 'SEMUA',
+      chartAngkatan: null,
+      chartRombel: null,
+      chartSiswa: null,
+      countdownInterval: null,
+      cbtLoadedPeriode: null,
+      cbtPaketList: [],
+      cbtActivePaket: null,
+      cbtCurrentIdx: 0,
+      cbtAnswers: {},
+      cbtTimerInterval: null,
+      cbtSecondsLeft: 0
+    };
+
+    /* =====================================================================
+       INISIALISASI HALAMAN
+       ===================================================================== */
+    document.addEventListener('DOMContentLoaded', () => {
+      loadInitData('');
+    });
+
+    async function loadInitData(requestedPeriode) {
+      const loader = document.getElementById('globalLoader');
+      const errBox = document.getElementById('globalError');
+      loader.style.display = 'block';
+      errBox.style.display = 'none';
+
+      try {
+        const url = requestedPeriode
+          ? `${API_URL}?action=init&periode=${encodeURIComponent(requestedPeriode)}`
+          : `${API_URL}?action=init`;
+
+        const res = await fetch(url, { method: 'GET', redirect: 'follow' });
+        if (!res.ok) throw new Error(`HTTP ${res.status} — Gagal menghubungi server.`);
+        const data = await res.json();
+
+        if (data.status !== 'ok') {
+          throw new Error(data.message || 'Gagal memuat data awal dari spreadsheet.');
+        }
+
+        appState.initData = data;
+        appState.periode = data.periode_terpilih;
+
+        populatePeriodeDropdown(data.daftar_periode, data.periode_terpilih);
+        renderBeranda(data);
+        buildKisiFilterChips(data.kisi_kisi || []);
+        renderKisiKisi();
+        renderBankSoal(data.bank_soal || []);
+        renderFooterPengesahan(data.pengesahan);
+
+        loader.style.display = 'none';
+
+        // Tampilkan tab aktif saat ini
+        const activeBtn = document.querySelector('.nav-btn.active');
+        const activeTab = activeBtn ? activeBtn.getAttribute('data-tab') : 'beranda';
+        document.getElementById(`tab-${activeTab}`).classList.add('active');
+
+        // Pulihkan sesi login siswa jika ada di sessionStorage
+        const savedSession = sessionStorage.getItem('tka_siswa_auth');
+        if (savedSession) {
+          try {
+            const parsed = JSON.parse(savedSession);
+            if (parsed.nis && parsed.nisn) {
+              document.getElementById('inputNis').value = parsed.nis;
+              document.getElementById('inputNisn').value = parsed.nisn;
+              fetchLaporanSiswa(parsed.nis, parsed.nisn, true);
+            }
+          } catch (e) {}
+        }
+      } catch (err) {
+        loader.style.display = 'none';
+        errBox.style.display = 'block';
+        errBox.innerHTML = `<strong>Gagal Memuat Data:</strong> ${escapeHtml(err.message)} <br><button class="btn btn-outline btn-sm" style="margin-top:8px;" onclick="loadInitData('${escapeHtml(requestedPeriode)}')">Coba Muat Ulang</button>`;
+      }
+    }
+
+    function populatePeriodeDropdown(daftar, terpilih) {
+      const sel = document.getElementById('selectPeriode');
+      if (!Array.isArray(daftar) || daftar.length === 0) return;
+      sel.innerHTML = daftar.map(p => {
+        const id = String(p.ID_PERIODE || '').trim();
+        const label = p.TAHUN_AJARAN || id;
+        return `<option value="${escapeHtml(id)}" ${id === terpilih ? 'selected' : ''}>${escapeHtml(label)}</option>`;
+      }).join('');
+    }
+
+    function onChangePeriode() {
+      const val = document.getElementById('selectPeriode').value;
+      appState.cbtLoadedPeriode = null;
+      logoutSiswa(false);
+      loadInitData(val);
+    }
+
+    function switchTab(tabName) {
+      document.querySelectorAll('.nav-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('data-tab') === tabName);
+      });
+      document.querySelectorAll('.tab-panel').forEach(panel => {
+        panel.classList.remove('active');
+      });
+      const target = document.getElementById(`tab-${tabName}`);
+      if (target) target.classList.add('active');
+
+      if (tabName === 'latihan' && appState.cbtLoadedPeriode !== appState.periode) {
+        loadPaketLatihan();
+      }
+    }
+
+    /* =====================================================================
+       RENDER TAB 1: BERANDA, KPI, GRAFIK ANGKATAN & TIMELINE
+       ===================================================================== */
+    function renderBeranda(data) {
+      const periodeObj = (data.daftar_periode || []).find(p => p.ID_PERIODE === data.periode_terpilih);
+      document.getElementById('heroPeriodeBadge').textContent =
+        `PERSIAPAN TKA KELAS IX • TP ${periodeObj ? periodeObj.TAHUN_AJARAN : data.periode_terpilih}`;
+
+      const ringkasan = data.ringkasan || {};
+      document.getElementById('kpiTotalSiswa').textContent = ringkasan.total_siswa_aktif ?? 0;
+      document.getElementById('kpiJumlahTO').textContent = `${ringkasan.jumlah_to ?? 0} Tahap`;
+      document.getElementById('kpiSudahTKA').textContent = ringkasan.sudah_tka ?? 0;
+      document.getElementById('kpiTargetNilai').textContent = Number(ringkasan.target_nilai || 65).toFixed(2);
+
+      setupCountdown(data.timeline || []);
+      renderChartsBeranda(data.grafik || {}, Number(ringkasan.target_nilai || 65));
+      renderTimeline(data.timeline || []);
+    }
+
+    function setupCountdown(timeline) {
+      if (appState.countdownInterval) clearInterval(appState.countdownInterval);
+
+      const now = new Date();
+      // Cari target utama yang belum lewat, atau kegiatan mendatang terdekat
+      let targetItem = timeline.find(t =>
+        String(t.IS_TARGET_UTAMA || '').toUpperCase() === 'YA' &&
+        t.TANGGAL_ISO && new Date(t.TANGGAL_ISO + 'T07:30:00+07:00') > now
+      );
+
+      if (!targetItem) {
+        targetItem = timeline.find(t =>
+          t.TANGGAL_ISO && new Date(t.TANGGAL_ISO + 'T07:30:00+07:00') > now
+        );
+      }
+
+      if (!targetItem) {
+        document.getElementById('cdLabel').textContent = 'AGENDA AKADEMIK';
+        document.getElementById('cdEventName').textContent = timeline.length
+          ? timeline[timeline.length - 1].NAMA_KEGIATAN
+          : 'Jadwal Segera Diumumkan';
+        ['cdDays', 'cdHours', 'cdMins', 'cdSecs'].forEach(id => document.getElementById(id).textContent = '00');
+        return;
+      }
+
+      document.getElementById('cdLabel').textContent =
+        String(targetItem.IS_TARGET_UTAMA || '').toUpperCase() === 'YA'
+          ? 'MENUJU PELAKSANAAN UTAMA'
+          : 'AGENDA TERDEKAT';
+      document.getElementById('cdEventName').textContent =
+        `${targetItem.NAMA_KEGIATAN} (${targetItem.TANGGAL_LABEL || targetItem.TANGGAL_ISO})`;
+
+      const targetDate = new Date(targetItem.TANGGAL_ISO + 'T07:30:00+07:00').getTime();
+
+      const updateTick = () => {
+        const diff = targetDate - Date.now();
+        if (diff <= 0) {
+          ['cdDays', 'cdHours', 'cdMins', 'cdSecs'].forEach(id => document.getElementById(id).textContent = '00');
+          clearInterval(appState.countdownInterval);
+          return;
+        }
+        const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const h = Math.floor((diff / (1000 * 60 * 60)) % 24);
+        const m = Math.floor((diff / (1000 * 60)) % 60);
+        const s = Math.floor((diff / 1000) % 60);
+
+        document.getElementById('cdDays').textContent = String(d).padStart(2, '0');
+        document.getElementById('cdHours').textContent = String(h).padStart(2, '0');
+        document.getElementById('cdMins').textContent = String(m).padStart(2, '0');
+        document.getElementById('cdSecs').textContent = String(s).padStart(2, '0');
+      };
+
+      updateTick();
+      appState.countdownInterval = setInterval(updateTick, 1000);
+    }
+
+    function renderChartsBeranda(grafik, targetNilai) {
+      const labels = grafik.labels || [];
+
+      if (appState.chartAngkatan) appState.chartAngkatan.destroy();
+      const ctx1 = document.getElementById('chartAngkatan').getContext('2d');
+      appState.chartAngkatan = new Chart(ctx1, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: 'Literasi Angkatan',
+              data: grafik.literasi_angkatan || [],
+              borderColor: '#0B4D3B',
+              backgroundColor: 'rgba(11, 77, 59, 0.12)',
+              borderWidth: 2.5,
+              tension: 0.3,
+              pointRadius: 4
+            },
+            {
+              label: 'Numerasi Angkatan',
+              data: grafik.numerasi_angkatan || [],
+              borderColor: '#D97706',
+              backgroundColor: 'rgba(217, 119, 6, 0.12)',
+              borderWidth: 2.5,
+              tension: 0.3,
+              pointRadius: 4
+            },
+            {
+              label: 'Rata-Rata Gabungan',
+              data: grafik.gabungan_angkatan || [],
+              borderColor: '#0284C7',
+              borderWidth: 2.5,
+              borderDash: [5, 5],
+              tension: 0.3,
+              pointRadius: 4
+            },
+            {
+              label: `Target (${targetNilai})`,
+              data: labels.map(() => targetNilai),
+              borderColor: '#DC2626',
+              borderWidth: 1.5,
+              borderDash: [3, 3],
+              pointRadius: 0
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: { min: 0, max: 100, ticks: { stepSize: 20 } }
+          },
+          plugins: {
+            legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11.5 } } }
+          }
+        }
+      });
+
+      if (appState.chartRombel) appState.chartRombel.destroy();
+      const perRombel = grafik.per_rombel || {};
+      const ctx2 = document.getElementById('chartRombel').getContext('2d');
+      appState.chartRombel = new Chart(ctx2, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [
+            { label: 'IX-A', data: perRombel['IX-A'] || [], backgroundColor: '#0B4D3B', borderRadius: 5 },
+            { label: 'IX-B', data: perRombel['IX-B'] || [], backgroundColor: '#10B981', borderRadius: 5 },
+            { label: 'IX-C', data: perRombel['IX-C'] || [], backgroundColor: '#F59E0B', borderRadius: 5 },
+            { label: 'IX-D', data: perRombel['IX-D'] || [], backgroundColor: '#0284C7', borderRadius: 5 }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: { min: 0, max: 100, ticks: { stepSize: 20 } }
+          },
+          plugins: {
+            legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11.5 } } }
+          }
+        }
+      });
+    }
+
+    function renderTimeline(timeline) {
+      const container = document.getElementById('timelineContainer');
+      if (!timeline.length) {
+        container.innerHTML = `<div class="empty-state">Belum ada jadwal kegiatan yang dipublikasikan pada periode ini.</div>`;
+        return;
+      }
+
+      container.innerHTML = timeline.map(item => {
+        const status = String(item.STATUS || 'MENDATANG').toUpperCase();
+        const isTarget = String(item.IS_TARGET_UTAMA || '').toUpperCase() === 'YA';
+        let badgeCls = 'badge-info';
+        if (status === 'SELESAI') badgeCls = 'badge-success';
+        else if (status === 'BERLANGSUNG') badgeCls = 'badge-warning';
+
+        return `
+          <div class="timeline-item ${isTarget ? 'target-utama' : ''}">
+            <div>
+              <div class="tl-date">${escapeHtml(item.TANGGAL_LABEL || item.TANGGAL_ISO || '-')}</div>
+              <div class="tl-title">${escapeHtml(item.NAMA_KEGIATAN || '-')} ${isTarget ? '⭐' : ''}</div>
+              <div class="tl-org">Penyelenggara: ${escapeHtml(item.PENYELENGGARA || 'SMP Al-Irsyad Surabaya')}</div>
+            </div>
+            <div>
+              <span class="badge ${badgeCls}">${escapeHtml(status)}</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    /* =====================================================================
+       RENDER TAB 2: PORTAL LAPORAN SISWA (NIS + NISN)
+       ===================================================================== */
+    function handleCekLaporan(e) {
+      e.preventDefault();
+      const nis = document.getElementById('inputNis').value.trim();
+      const nisn = document.getElementById('inputNisn').value.trim();
+      fetchLaporanSiswa(nis, nisn, false);
+    }
+
+    async function fetchLaporanSiswa(nis, nisn, isSilentRestore) {
+      const btn = document.getElementById('btnCekLaporan');
+      const errBox = document.getElementById('loginError');
+      errBox.style.display = 'none';
+      btn.disabled = true;
+      btn.textContent = 'Memeriksa Data Siswa...';
+
+      try {
+        const url = `${API_URL}?action=cek_laporan&periode=${encodeURIComponent(appState.periode)}&nis=${encodeURIComponent(nis)}&nisn=${encodeURIComponent(nisn)}`;
+        const res = await fetch(url, { method: 'GET', redirect: 'follow' });
+        const data = await res.json();
+
+        if (data.status !== 'ok') {
+          if (!isSilentRestore) {
+            errBox.style.display = 'block';
+            errBox.textContent = data.message || 'Data siswa tidak ditemukan.';
+          }
+          sessionStorage.removeItem('tka_siswa_auth');
+          return;
+        }
+
+        sessionStorage.setItem('tka_siswa_auth', JSON.stringify({ nis, nisn }));
+        renderLaporanSiswa(data);
+      } catch (err) {
+        if (!isSilentRestore) {
+          errBox.style.display = 'block';
+          errBox.textContent = 'Terjadi kesalahan jaringan saat memeriksa data. Silakan coba kembali.';
+        }
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Tampilkan Laporan Ananda';
+      }
+    }
+
+    function renderLaporanSiswa(data) {
+      document.getElementById('loginSiswaWrapper').style.display = 'none';
+      document.getElementById('hasilLaporanWrapper').style.display = 'block';
+
+      const s = data.siswa || {};
+      document.getElementById('repNamaSiswa').textContent = s.nama || '-';
+      document.getElementById('repNis').textContent = s.nis || '-';
+      document.getElementById('repNisn').textContent = s.nisn || '-';
+      document.getElementById('repRombel').textContent = s.rombel || '-';
+      document.getElementById('repTahun').textContent = s.tahun_ajaran || s.id_periode || '-';
+
+      // Dokumen PDF TTE
+      const pdfSub = document.getElementById('pdfInfoSubtitle');
+      const pdfBtns = document.getElementById('pdfActionButtons');
+      if (data.pdf_tte && data.pdf_tte.url_view) {
+        pdfSub.innerHTML = `Berkas resmi siap diunduh • Diperbarui pada <strong>${escapeHtml(data.pdf_tte.waktu_update || '-')}</strong>`;
+        pdfBtns.innerHTML = `
+          <a href="${escapeHtml(data.pdf_tte.url_view)}" target="_blank" rel="noopener" class="btn btn-outline btn-sm">
+            Pratinjau PDF
+          </a>
+          <a href="${escapeHtml(data.pdf_tte.url_download)}" target="_blank" rel="noopener" class="btn btn-primary btn-sm">
+            Unduh PDF Resmi (TTE)
+          </a>
+        `;
+      } else {
+        pdfSub.textContent = 'Berkas PDF resmi ber-TTE sedang dalam proses penerbitan oleh kurikulum.';
+        pdfBtns.innerHTML = `<span class="badge badge-warning">PDF Belum Terbit</span>`;
+      }
+
+      // Narasi Analisis
+      const nar = data.analisis_narasi || {};
+      document.getElementById('narasiPerkembangan').textContent = nar.perkembangan || '-';
+      document.getElementById('narasiPerbandingan').textContent = nar.perbandingan || '-';
+      document.getElementById('narasiKompetensi').textContent = nar.capaian_kompetensi || '-';
+      document.getElementById('narasiTindakLanjut').textContent = nar.tindak_lanjut || '-';
+
+      const kelAlert = document.getElementById('kelengkapanAlert');
+      if (nar.kelengkapan_data) {
+        kelAlert.style.display = 'block';
+        kelAlert.textContent = `Catatan Kelengkapan Data: ${nar.kelengkapan_data}`;
+      } else {
+        kelAlert.style.display = 'none';
+      }
+
+      // Tabel & Grafik Riwayat TO Siswa
+      const riwayat = data.riwayat_to || [];
+      const tbody = document.getElementById('tbodyNilaiSiswa');
+      if (!riwayat.length) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--text-soft);">Belum ada data nilai Try Out.</td></tr>`;
+      } else {
+        tbody.innerHTML = riwayat.map(r => `
+          <tr>
+            <td>
+              <strong>${escapeHtml(r.nama_to)}</strong><br>
+              <span style="font-size:11.5px; color:var(--text-soft);">${escapeHtml(r.tanggal)}</span>
+            </td>
+            <td>${r.literasi !== null ? r.literasi.toFixed(2) : '-'}</td>
+            <td>${r.numerasi !== null ? r.numerasi.toFixed(2) : '-'}</td>
+            <td><strong>${r.rata_ananda !== null ? r.rata_ananda.toFixed(2) : '-'}</strong></td>
+            <td>${r.rata_rombel !== null ? r.rata_rombel.toFixed(2) : '-'}</td>
+          </tr>
+        `).join('');
+      }
+
+      if (appState.chartSiswa) appState.chartSiswa.destroy();
+      const ctxSiswa = document.getElementById('chartSiswa').getContext('2d');
+      appState.chartSiswa = new Chart(ctxSiswa, {
+        type: 'line',
+        data: {
+          labels: riwayat.map(r => r.nama_to),
+          datasets: [
+            {
+              label: 'Rata-Rata Ananda',
+              data: riwayat.map(r => r.rata_ananda),
+              borderColor: '#0B4D3B',
+              backgroundColor: 'rgba(11, 77, 59, 0.14)',
+              borderWidth: 3,
+              tension: 0.3,
+              pointRadius: 5
+            },
+            {
+              label: `Rata-Rata ${s.rombel || 'Rombel'}`,
+              data: riwayat.map(r => r.rata_rombel),
+              borderColor: '#D97706',
+              borderWidth: 2,
+              tension: 0.3,
+              pointRadius: 4
+            },
+            {
+              label: 'Rata-Rata Angkatan',
+              data: riwayat.map(r => r.rata_angkatan),
+              borderColor: '#0284C7',
+              borderDash: [5, 5],
+              borderWidth: 2,
+              tension: 0.3,
+              pointRadius: 3
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: { min: 0, max: 100, ticks: { stepSize: 20 } }
+          },
+          plugins: {
+            legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11.5 } } }
+          }
+        }
+      });
+
+      // Hasil TKA Resmi jika sudah ada
+      const cardTKA = document.getElementById('cardHasilTKA');
+      const kontenTKA = document.getElementById('kontenHasilTKA');
+      if (data.hasil_tka && (data.hasil_tka.NILAI_LITERASI || data.hasil_tka.NILAI_NUMERASI || data.hasil_tka.RATA_RATA)) {
+        const t = data.hasil_tka;
+        cardTKA.style.display = 'block';
+        kontenTKA.innerHTML = `
+          <div class="kpi-grid" style="grid-template-columns: repeat(4, 1fr); margin-bottom:0;">
+            <div class="kpi-card">
+              <div class="kpi-label">Literasi TKA</div>
+              <div class="kpi-val">${escapeHtml(t.NILAI_LITERASI || '-')}</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label">Numerasi TKA</div>
+              <div class="kpi-val">${escapeHtml(t.NILAI_NUMERASI || '-')}</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label">Rata-Rata TKA</div>
+              <div class="kpi-val">${escapeHtml(t.RATA_RATA || '-')}</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label">Status / Kategori</div>
+              <div class="kpi-val" style="font-size:18px; padding-top:6px;">${escapeHtml(t.KATEGORI || t.STATUS_TKA || '-')}</div>
+            </div>
+          </div>
+        `;
+      } else {
+        cardTKA.style.display = 'none';
+      }
+    }
+
+    function logoutSiswa(clearStorage = true) {
+      if (clearStorage) sessionStorage.removeItem('tka_siswa_auth');
+      document.getElementById('hasilLaporanWrapper').style.display = 'none';
+      document.getElementById('loginSiswaWrapper').style.display = 'block';
+    }
+
+    /* =====================================================================
+       RENDER TAB 3: KISI-KISI TKA
+       ===================================================================== */
+    function buildKisiFilterChips(kisiList) {
+      const chipsWrap = document.getElementById('kisiFilterChips');
+      const mapelSet = new Set();
+      kisiList.forEach(k => {
+        if (k.MAPEL && String(k.MAPEL).trim()) {
+          mapelSet.add(String(k.MAPEL).trim());
+        }
+      });
+
+      appState.kisiMapelFilter = 'SEMUA';
+      let html = `<button class="chip active" onclick="filterKisiMapel('SEMUA', this)">Semua Mapel (${kisiList.length})</button>`;
+      mapelSet.forEach(m => {
+        const count = kisiList.filter(k => String(k.MAPEL || '').trim() === m).length;
+        html += `<button class="chip" onclick="filterKisiMapel('${escapeHtml(m)}', this)">${escapeHtml(m)} (${count})</button>`;
+      });
+      chipsWrap.innerHTML = html;
+    }
+
+    function filterKisiMapel(mapel, btnEl) {
+      appState.kisiMapelFilter = mapel;
+      document.querySelectorAll('#kisiFilterChips .chip').forEach(c => c.classList.remove('active'));
+      if (btnEl) btnEl.classList.add('active');
+      renderKisiKisi();
+    }
+
+    function renderKisiKisi() {
+      const container = document.getElementById('kisiContainer');
+      const allKisi = (appState.initData && appState.initData.kisi_kisi) ? appState.initData.kisi_kisi : [];
+      const keyword = (document.getElementById('searchKisiInput').value || '').toLowerCase().trim();
+
+      const filtered = allKisi.filter(item => {
+        const matchMapel = appState.kisiMapelFilter === 'SEMUA' ||
+          String(item.MAPEL || '').trim() === appState.kisiMapelFilter;
+        if (!matchMapel) return false;
+        if (!keyword) return true;
+
+        const hay = `${item.MAPEL} ${item.ELEMEN_KONTEN} ${item.KOMPETENSI_INDIKATOR} ${item.LEVEL_KOGNITIF} ${item.BENTUK_SOAL}`.toLowerCase();
+        return hay.includes(keyword);
+      });
+
+      if (!filtered.length) {
+        container.innerHTML = `<div class="empty-state">Tidak ditemukan data kisi-kisi yang sesuai dengan filter saat ini.</div>`;
+        return;
+      }
+
+      container.innerHTML = `
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th style="width:52px;">No</th>
+                <th style="width:130px;">Mata Pelajaran</th>
+                <th style="width:200px;">Elemen Konten</th>
+                <th>Kompetensi &amp; Indikator Soal</th>
+                <th style="width:140px;">Level Kognitif</th>
+                <th style="width:140px;">Bentuk Soal</th>
+                <th style="width:130px;">Dokumen</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${filtered.map((k, idx) => {
+                const mapel = String(k.MAPEL || '-').trim();
+                const isLit = mapel.toLowerCase().includes('literasi');
+                const badgeCls = isLit ? 'badge-success' : 'badge-warning';
+                const pdfUrl = normalizeDriveUrl(k.LINK_PDF_KISI);
+
+                return `
+                  <tr>
+                    <td><strong>${escapeHtml(k.URUTAN || idx + 1)}</strong></td>
+                    <td><span class="badge ${badgeCls}">${escapeHtml(mapel)}</span></td>
+                    <td><strong>${escapeHtml(k.ELEMEN_KONTEN || '-')}</strong></td>
+                    <td>${escapeHtml(k.KOMPETENSI_INDIKATOR || '-')}</td>
+                    <td><span class="badge badge-info">${escapeHtml(k.LEVEL_KOGNITIF || '-')}</span></td>
+                    <td>${escapeHtml(k.BENTUK_SOAL || '-')}</td>
+                    <td>
+                      ${pdfUrl
+                        ? `<a href="${escapeHtml(pdfUrl)}" target="_blank" rel="noopener" class="btn btn-outline btn-sm">Unduh PDF</a>`
+                        : `<span style="font-size:12px; color:var(--text-soft);">-</span>`
+                      }
+                    </td>
+                  </tr>
+                `;
+              }).join('')}
+            </tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    /* =====================================================================
+       RENDER TAB 4: BANK SOAL & PEMBAHASAN
+       ===================================================================== */
+    function renderBankSoal(bankList) {
+      const container = document.getElementById('bankSoalContainer');
+      if (!bankList.length) {
+        container.innerHTML = `<div class="empty-state" style="grid-column:1/-1;">Arsip Bank Soal &amp; Pembahasan belum dirilis pada periode ini.</div>`;
+        return;
+      }
+
+      container.innerHTML = bankList.map(b => {
+        const soalUrl = normalizeDriveUrl(b.LINK_SOAL_PDF);
+        const bahasUrl = normalizeDriveUrl(b.LINK_PEMBAHASAN_PDF);
+
+        return `
+          <div class="resource-card">
+            <div>
+              <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:8px;">
+                <span class="badge badge-success">${escapeHtml(b.ID_TO || 'PAKET TO')}</span>
+                <span style="font-size:12px; color:var(--text-soft);">${escapeHtml(b.TANGGAL_UJIAN || '-')}</span>
+              </div>
+              <h3 style="font-size:16px; font-weight:700; margin-bottom:4px;">${escapeHtml(b.NAMA_PAKET || '-')}</h3>
+              <p style="font-size:12.5px; color:var(--text-soft);">Penyelenggara: ${escapeHtml(b.PENYELENGGARA || '-')}</p>
+            </div>
+
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+              ${soalUrl
+                ? `<a href="${escapeHtml(soalUrl)}" target="_blank" rel="noopener" class="btn btn-primary btn-sm" style="flex:1;">Naskah Soal</a>`
+                : `<button class="btn btn-outline btn-sm" style="flex:1;" disabled>Soal Belum Ada</button>`
+              }
+              ${bahasUrl
+                ? `<a href="${escapeHtml(bahasUrl)}" target="_blank" rel="noopener" class="btn btn-outline btn-sm" style="flex:1;">Pembahasan</a>`
+                : `<button class="btn btn-outline btn-sm" style="flex:1;" disabled>Pembahasan Segera</button>`
+              }
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    /* =====================================================================
+       RENDER TAB 5: LATIHAN MANDIRI CBT
+       ===================================================================== */
+    async function loadPaketLatihan() {
+      const loader = document.getElementById('cbtLoader');
+      const lobby = document.getElementById('cbtLobbyWrapper');
+      const container = document.getElementById('paketLatihanContainer');
+
+      loader.style.display = 'block';
+      lobby.style.display = 'none';
+
+      try {
+        const url = `${API_URL}?action=latihan_soal&periode=${encodeURIComponent(appState.periode)}`;
+        const res = await fetch(url, { method: 'GET', redirect: 'follow' });
+        const data = await res.json();
+
+        appState.cbtLoadedPeriode = appState.periode;
+        appState.cbtPaketList = data.paket || [];
+
+        loader.style.display = 'none';
+        lobby.style.display = 'block';
+
+        if (!appState.cbtPaketList.length) {
+          container.innerHTML = `<div class="empty-state" style="grid-column:1/-1;">Belum ada paket latihan CBT yang aktif pada periode ini.</div>`;
+          return;
+        }
+
+        container.innerHTML = appState.cbtPaketList.map((p, idx) => `
+          <div class="resource-card">
+            <div>
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                <span class="badge badge-info">${escapeHtml(p.mapel)}</span>
+                <span style="font-size:12px; font-weight:700; color:var(--text-muted);">${p.durasi_menit} Menit</span>
+              </div>
+              <h3 style="font-size:16px; font-weight:700; margin-bottom:4px;">${escapeHtml(p.judul)}</h3>
+              <p style="font-size:13px; color:var(--text-soft);">Jumlah Butir Soal: <strong>${p.jumlah_soal} Soal</strong></p>
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="mulaiPaketCBT(${idx})" ${p.jumlah_soal === 0 ? 'disabled' : ''}>
+              ${p.jumlah_soal > 0 ? 'Mulai Latihan Sekarang' : 'Soal Belum Tersedia'}
+            </button>
+          </div>
+        `).join('');
+      } catch (err) {
+        loader.style.display = 'none';
+        lobby.style.display = 'block';
+        container.innerHTML = `<div class="alert alert-danger" style="grid-column:1/-1;">Gagal memuat paket latihan soal. Silakan muat ulang halaman.</div>`;
+      }
+    }
+
+    function mulaiPaketCBT(idx) {
+      const paket = appState.cbtPaketList[idx];
+      if (!paket || !paket.soal || !paket.soal.length) return;
+
+      appState.cbtActivePaket = paket;
+      appState.cbtCurrentIdx = 0;
+      appState.cbtAnswers = {};
+      appState.cbtSecondsLeft = (Number(paket.durasi_menit) || 30) * 60;
+
+      document.getElementById('cbtLobbyWrapper').style.display = 'none';
+      document.getElementById('cbtResultWrapper').style.display = 'none';
+      document.getElementById('cbtExamWrapper').style.display = 'block';
+      document.getElementById('cbtExamTitle').textContent = `${paket.judul} (${paket.mapel})`;
+
+      startTimerCBT();
+      renderSoalCBT();
+    }
+
+    function startTimerCBT() {
+      if (appState.cbtTimerInterval) clearInterval(appState.cbtTimerInterval);
+
+      const updateDisp = () => {
+        const m = Math.floor(appState.cbtSecondsLeft / 60);
+        const s = appState.cbtSecondsLeft % 60;
+        document.getElementById('cbtTimerDisplay').textContent =
+          `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+      };
+
+      updateDisp();
+      appState.cbtTimerInterval = setInterval(() => {
+        appState.cbtSecondsLeft--;
+        if (appState.cbtSecondsLeft <= 0) {
+          clearInterval(appState.cbtTimerInterval);
+          selesaiUjianCBT(true);
+          return;
+        }
+        updateDisp();
+      }, 1000);
+    }
+
+    function renderSoalCBT() {
+      const paket = appState.cbtActivePaket;
+      const idx = appState.cbtCurrentIdx;
+      const soal = paket.soal[idx];
+
+      // Nomor navigasi
+      document.getElementById('cbtNavNumbers').innerHTML = paket.soal.map((s, i) => {
+        const isAns = !!appState.cbtAnswers[i];
+        const isCurr = i === idx;
+        return `<button class="num-btn ${isAns ? 'answered' : ''} ${isCurr ? 'current' : ''}" onclick="jumpSoal(${i})">${i + 1}</button>`;
+      }).join('');
+
+      // Area Soal
+      const selectedKey = appState.cbtAnswers[idx] || '';
+      const opsiKeys = ['A', 'B', 'C', 'D'];
+
+      document.getElementById('cbtQuestionArea').innerHTML = `
+        <div style="font-size:13px; font-weight:700; color:var(--primary); margin-bottom:10px;">
+          Soal Nomor ${idx + 1} dari ${paket.soal.length}
+        </div>
+        ${soal.stimulus ? `<div class="stimulus-box">${escapeHtml(soal.stimulus)}</div>` : ''}
+        ${soal.gambar_url ? `<div style="margin-bottom:14px;"><img src="${escapeHtml(soal.gambar_url)}" alt="Ilustrasi Soal" style="max-width:100%; max-height:320px; border-radius:10px; border:1px solid var(--border);" /></div>` : ''}
+        <div style="font-size:15px; font-weight:600; color:var(--text);">${escapeHtml(soal.pertanyaan)}</div>
+        <div class="opsi-list">
+          ${opsiKeys.map(k => {
+            const teksOpsi = soal.opsi[k];
+            if (!teksOpsi) return '';
+            const isSel = selectedKey === k;
+            return `
+              <div class="opsi-item ${isSel ? 'selected' : ''}" onclick="pilihJawabanCBT('${k}')">
+                <div class="opsi-key">${k}</div>
+                <div style="font-size:14px; padding-top:2px;">${escapeHtml(teksOpsi)}</div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      `;
+
+      document.getElementById('btnPrevSoal').disabled = idx === 0;
+      const btnNext = document.getElementById('btnNextSoal');
+      if (idx === paket.soal.length - 1) {
+        btnNext.textContent = 'Selesai & Kumpulkan';
+        btnNext.onclick = () => selesaiUjianCBT(false);
+      } else {
+        btnNext.textContent = 'Berikutnya →';
+        btnNext.onclick = () => navSoal(1);
+      }
+    }
+
+    function pilihJawabanCBT(key) {
+      appState.cbtAnswers[appState.cbtCurrentIdx] = key;
+      renderSoalCBT();
+    }
+
+    function navSoal(step) {
+      const next = appState.cbtCurrentIdx + step;
+      if (next >= 0 && next < appState.cbtActivePaket.soal.length) {
+        appState.cbtCurrentIdx = next;
+        renderSoalCBT();
+      }
+    }
+
+    function jumpSoal(idx) {
+      appState.cbtCurrentIdx = idx;
+      renderSoalCBT();
+    }
+
+    function selesaiUjianCBT(isTimeUp) {
+      const paket = appState.cbtActivePaket;
+      if (!isTimeUp) {
+        const terjawab = Object.keys(appState.cbtAnswers).length;
+        const konfirmasi = confirm(`Anda telah menjawab ${terjawab} dari ${paket.soal.length} soal. Yakin ingin mengakhiri latihan dan melihat pembahasan?`);
+        if (!konfirmasi) return;
+      }
+
+      if (appState.cbtTimerInterval) clearInterval(appState.cbtTimerInterval);
+
+      let benar = 0;
+      paket.soal.forEach((s, i) => {
+        if ((appState.cbtAnswers[i] || '') === s.kunci) benar++;
+      });
+
+      const total = paket.soal.length;
+      const skor = total > 0 ? Math.round((benar / total) * 100) : 0;
+
+      document.getElementById('cbtExamWrapper').style.display = 'none';
+      document.getElementById('cbtResultWrapper').style.display = 'block';
+
+      document.getElementById('cbtResTitle').textContent = `Hasil: ${paket.judul}`;
+      document.getElementById('cbtResSkor').textContent = skor;
+      document.getElementById('cbtResBenar').textContent = benar;
+      document.getElementById('cbtResTotalSoal').textContent = `dari ${total} soal`;
+      document.getElementById('cbtResPredikat').textContent =
+        skor >= 80 ? 'Sangat Baik' : (skor >= 65 ? 'Tuntas Target' : 'Perlu Penguatan');
+
+      document.getElementById('cbtReviewList').innerHTML = paket.soal.map((s, i) => {
+        const jwb = appState.cbtAnswers[i] || 'Tidak Dijawab';
+        const isCorrect = jwb === s.kunci;
+        return `
+          <div style="border:1px solid var(--border); border-left:4px solid ${isCorrect ? 'var(--success)' : 'var(--danger)'}; border-radius:12px; padding:16px; background:#FAFCFB;">
+            <div style="display:flex; justify-content:space-between; gap:8px; margin-bottom:8px; flex-wrap:wrap;">
+              <strong>Soal No. ${i + 1}</strong>
+              <span class="badge ${isCorrect ? 'badge-success' : 'badge-danger'}">
+                ${isCorrect ? 'Benar' : 'Kurang Tepat'}
+              </span>
+            </div>
+            <p style="font-size:14px; margin-bottom:10px;">${escapeHtml(s.pertanyaan)}</p>
+            <div style="font-size:13px; margin-bottom:8px;">
+              Jawaban Anda: <strong>${escapeHtml(jwb)}</strong> ${s.opsi[jwb] ? `(${escapeHtml(s.opsi[jwb])})` : ''} &nbsp;|&nbsp;
+              Kunci Jawaban: <strong style="color:var(--success);">${escapeHtml(s.kunci)}</strong> ${s.opsi[s.kunci] ? `(${escapeHtml(s.opsi[s.kunci])})` : ''}
+            </div>
+            ${s.pembahasan ? `<div style="background:#FFFFFF; border:1px solid var(--border); padding:10px 12px; border-radius:8px; font-size:13px; color:var(--text-muted);"><strong>Pembahasan:</strong> ${escapeHtml(s.pembahasan)}</div>` : ''}
+          </div>
+        `;
+      }).join('');
+    }
+
+    function kembaliKeLobbyCBT() {
+      document.getElementById('cbtResultWrapper').style.display = 'none';
+      document.getElementById('cbtLobbyWrapper').style.display = 'block';
+    }
+
+    /* =====================================================================
+       HELPER UTILITAS
+       ===================================================================== */
+    function renderFooterPengesahan(pengesahan) {
+      if (!pengesahan) return;
+      document.getElementById('footerPengesahan').textContent =
+        `Kepala Sekolah: ${pengesahan.kepala_sekolah || '-'} (NIPA. ${pengesahan.nipa || '-'})`;
+    }
+
+    function normalizeDriveUrl(raw) {
+      const val = String(raw || '').trim();
+      if (!val) return '';
+      if (val.startsWith('http://') || val.startsWith('https://')) return val;
+      if (/^[-\w]{20,}$/.test(val)) {
+        return `https://drive.google.com/file/d/${val}/view`;
+      }
+      return '';
+    }
+
+    function escapeHtml(str) {
+      return String(str ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+  </script>
+</body>
+</html>
