@@ -11,6 +11,7 @@
   <style>
     :root {
       --primary: #0B4D3B;
+      --primary-mid: #0D6652;
       --primary-dark: #073629;
       --primary-light: #E6F2EE;
       --primary-border: #B7DDD1;
@@ -457,6 +458,114 @@
       margin-top: 4px;
     }
 
+    /* DASHBOARD KURIKULUM FILTER & HORIZONTAL ROMBEL BARS */
+    .kurikulum-filter-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 10px;
+    }
+
+    @media (max-width: 680px) {
+      .kurikulum-filter-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .kurikulum-select-group label {
+      display: block;
+      font-size: 13.5px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+
+    .kurikulum-select {
+      width: 100%;
+      padding: 11px 14px;
+      border-radius: 10px;
+      border: 1.5px solid #CBD5E1;
+      background-color: #FFFFFF;
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+      cursor: pointer;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .kurikulum-select:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(11, 77, 59, 0.12);
+    }
+
+    .kurikulum-meta-line {
+      font-size: 13.5px;
+      color: var(--text-soft);
+      font-weight: 500;
+      margin-bottom: 16px;
+    }
+
+    .rombel-bar-list {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .rombel-scale-row {
+      display: grid;
+      grid-template-columns: 62px 1fr 62px;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 4px;
+    }
+
+    .rombel-scale-ticks {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11.5px;
+      font-weight: 600;
+      color: var(--text-soft);
+    }
+
+    .rombel-bar-row {
+      display: grid;
+      grid-template-columns: 62px 1fr 62px;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .rombel-name {
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--text);
+    }
+
+    .rombel-track {
+      width: 100%;
+      height: 24px;
+      background: #EEF2F6;
+      border-radius: 999px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .rombel-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #0B4D3B 0%, #0E6B56 100%);
+      border-radius: 999px;
+      transition: width 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .rombel-score {
+      text-align: right;
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--text);
+      font-variant-numeric: tabular-nums;
+    }
+
     /* CHARTS GRID */
     .charts-grid {
       display: grid;
@@ -474,6 +583,12 @@
     .chart-wrap {
       position: relative;
       height: 290px;
+      width: 100%;
+    }
+
+    .chart-wrap-tall {
+      position: relative;
+      height: 320px;
       width: 100%;
     }
 
@@ -1001,7 +1116,7 @@
           <span class="hero-tag" id="heroPeriodeBadge">PERSIAPAN TKA KELAS IX</span>
           <h2>Pantau Perkembangan Literasi &amp; Numerasi Secara Terukur</h2>
           <p>
-            Akses rekapitulasi capaian Try Out angkatan, dokumen resmi kisi-kisi Tes Kemampuan Akademik (TKA),
+            Akses rekapitulasi capaian Try Out angkatan per kelas dan per mata pelajaran, dokumen resmi kisi-kisi TKA,
             unduh laporan analisis individual bertanda tangan elektronik, serta berlatih soal mandiri.
           </p>
           <div class="hero-actions">
@@ -1062,13 +1177,81 @@
         </div>
       </div>
 
-      <!-- GRAFIK ANGKATAN & ROMBEL -->
+      <!-- ============================================================
+           BAGIAN DASHBOARD KURIKULUM: FILTER PERIODE TO & MATA PELAJARAN
+           ============================================================ -->
+      <div class="kurikulum-filter-grid">
+        <div class="kurikulum-select-group">
+          <label for="filterPeriodeTO">Pilih periode TO</label>
+          <select id="filterPeriodeTO" class="kurikulum-select" onchange="updateDashboardKurikulum()"></select>
+        </div>
+        <div class="kurikulum-select-group">
+          <label for="filterMapelTO">Pilih mata pelajaran</label>
+          <select id="filterMapelTO" class="kurikulum-select" onchange="updateDashboardKurikulum()">
+            <option value="gabungan">Gabungan (Literasi &amp; Numerasi)</option>
+            <option value="literasi">Literasi</option>
+            <option value="numerasi">Numerasi</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="kurikulum-meta-line" id="kurikulumMetaSummary">
+        Memuat ringkasan periode Try Out...
+      </div>
+
+      <!-- KARTU 1: RATA-RATA NILAI PER ROMBEL (HORIZONTAL PROGRESS BAR) -->
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title" id="titleRombelProgress">Rata-rata nilai per rombel</div>
+          </div>
+          <div style="font-size:12.5px; font-weight:600; color:var(--text-soft);">Skala 0–100</div>
+        </div>
+
+        <div class="rombel-scale-row">
+          <div></div>
+          <div class="rombel-scale-ticks">
+            <span>0</span>
+            <span>25</span>
+            <span>50</span>
+            <span>75</span>
+            <span>100</span>
+          </div>
+          <div></div>
+        </div>
+
+        <div id="rombelHorizontalBars" class="rombel-bar-list"></div>
+      </div>
+
+      <!-- KARTU 2: TREN HASIL SELURUH PERIODE TO (DENGAN ANGKA DI ATAS TITIK) -->
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Tren Hasil Seluruh Periode TO</div>
+            <div class="card-subtitle" id="subtitleTrenKurikulum">
+              Pergerakan rata-rata nilai seluruh siswa kelas IX dari satu periode TO ke periode berikutnya.
+            </div>
+          </div>
+          <span class="badge badge-success" id="badgeMapelAktif">Gabungan</span>
+        </div>
+
+        <div style="display:flex; align-items:center; gap:8px; font-size:13px; font-weight:600; color:var(--text-muted); margin-bottom:12px;">
+          <span style="display:inline-block; width:18px; height:3px; background:var(--primary); border-radius:2px;"></span>
+          <span id="legendTrenKurikulum">Rata-rata seluruh siswa kelas IX</span>
+        </div>
+
+        <div class="chart-wrap-tall">
+          <canvas id="chartTrenKurikulum"></canvas>
+        </div>
+      </div>
+
+      <!-- GRAFIK KOMPARATIF ANGKATAN & ANTAR ROMBEL -->
       <div class="charts-grid">
         <div class="card">
           <div class="card-header">
             <div>
-              <div class="card-title">Tren Rata-Rata Kompetensi Angkatan</div>
-              <div class="card-subtitle">Perbandingan nilai Literasi, Numerasi, dan Gabungan per Try Out</div>
+              <div class="card-title">Perbandingan Literasi vs Numerasi Angkatan</div>
+              <div class="card-subtitle">Tren nilai Literasi, Numerasi, Gabungan, dan standar target</div>
             </div>
           </div>
           <div class="chart-wrap">
@@ -1079,8 +1262,8 @@
         <div class="card">
           <div class="card-header">
             <div>
-              <div class="card-title">Perbandingan Capaian Antar Rombel</div>
-              <div class="card-subtitle">Rata-rata gabungan kelas IX-A hingga IX-D pada setiap Try Out</div>
+              <div class="card-title">Perbandingan Capaian Antar Rombel (Semua TO)</div>
+              <div class="card-subtitle">Grafik batang berkelompok kelas IX-A hingga IX-D pada setiap Try Out</div>
             </div>
           </div>
           <div class="chart-wrap">
@@ -1389,6 +1572,7 @@
     let appState = {
       periode: '',
       initData: null,
+      chartTrenKurikulum: null,
       chartAngkatan: null,
       chartRombel: null,
       chartSiswa: null,
@@ -1400,6 +1584,31 @@
       cbtAnswers: {},
       cbtTimerInterval: null,
       cbtSecondsLeft: 0
+    };
+
+    /* Plugin Chart.js untuk menampilkan angka nilai tepat di atas setiap titik garis */
+    const pointValueLabelPlugin = {
+      id: 'pointValueLabelPlugin',
+      afterDatasetsDraw(chart) {
+        const { ctx } = chart;
+        chart.data.datasets.forEach((dataset, datasetIndex) => {
+          const meta = chart.getDatasetMeta(datasetIndex);
+          if (meta.hidden) return;
+          ctx.save();
+          ctx.font = '700 12.5px "Plus Jakarta Sans", sans-serif';
+          ctx.fillStyle = '#0B4D3B';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'bottom';
+
+          meta.data.forEach((point, index) => {
+            const val = dataset.data[index];
+            if (val === null || val === undefined || isNaN(val)) return;
+            const text = Number(val).toFixed(2);
+            ctx.fillText(text, point.x, point.y - 9);
+          });
+          ctx.restore();
+        });
+      }
     };
 
     /* =====================================================================
@@ -1497,7 +1706,7 @@
     }
 
     /* =====================================================================
-       RENDER TAB 1: BERANDA, KPI, GRAFIK ANGKATAN & TIMELINE
+       RENDER TAB 1: BERANDA, DASHBOARD KURIKULUM (TO/MAPEL/ROMBEL) & TIMELINE
        ===================================================================== */
     function renderBeranda(data) {
       const periodeObj = (data.daftar_periode || []).find(p => p.ID_PERIODE === data.periode_terpilih);
@@ -1511,8 +1720,195 @@
       document.getElementById('kpiTargetNilai').textContent = Number(ringkasan.target_nilai || 65).toFixed(2);
 
       setupCountdown(data.timeline || []);
+      populateFilterPeriodeTO(data);
+      updateDashboardKurikulum();
       renderChartsBeranda(data.grafik || {}, Number(ringkasan.target_nilai || 65));
       renderTimeline(data.timeline || []);
+    }
+
+    function populateFilterPeriodeTO(data) {
+      const selTO = document.getElementById('filterPeriodeTO');
+      const masterTO = data.master_to || [];
+      const labels = (data.grafik && data.grafik.labels) ? data.grafik.labels : [];
+
+      if (masterTO.length > 0) {
+        selTO.innerHTML = masterTO.map((to, idx) => {
+          const id = String(to.ID_TO || `TO-${idx + 1}`).trim();
+          const nama = String(to.NAMA_TO || '').trim();
+          const label = nama && nama !== id ? `${id} — ${nama}` : id;
+          return `<option value="${idx}">${escapeHtml(label)}</option>`;
+        }).join('');
+        // Default pilih periode TO terakhir
+        selTO.value = String(masterTO.length - 1);
+      } else if (labels.length > 0) {
+        selTO.innerHTML = labels.map((lbl, idx) =>
+          `<option value="${idx}">${escapeHtml(lbl)}</option>`
+        ).join('');
+        selTO.value = String(labels.length - 1);
+      } else {
+        selTO.innerHTML = `<option value="0">Belum ada data TO</option>`;
+      }
+    }
+
+    function updateDashboardKurikulum() {
+      if (!appState.initData) return;
+
+      const data = appState.initData;
+      const grafik = data.grafik || {};
+      const masterTO = data.master_to || [];
+      const ringkasan = data.ringkasan || {};
+
+      const toIdx = parseInt(document.getElementById('filterPeriodeTO').value || '0', 10);
+      const mapelKey = document.getElementById('filterMapelTO').value || 'gabungan';
+
+      const mapelLabels = {
+        gabungan: 'Gabungan (Literasi & Numerasi)',
+        literasi: 'Literasi',
+        numerasi: 'Numerasi'
+      };
+      const mapelShort = {
+        gabungan: 'Gabungan',
+        literasi: 'Literasi',
+        numerasi: 'Numerasi'
+      };
+
+      const idTo = (masterTO[toIdx] && masterTO[toIdx].ID_TO)
+        ? String(masterTO[toIdx].ID_TO).trim()
+        : ((grafik.id_to && grafik.id_to[toIdx]) || (grafik.labels && grafik.labels[toIdx]) || '-');
+
+      // Hitung jumlah data nilai
+      const pesertaArr = mapelKey === 'literasi'
+        ? (grafik.peserta_literasi || [])
+        : (mapelKey === 'numerasi' ? (grafik.peserta_numerasi || []) : (grafik.peserta_gabungan || []));
+      const defaultTotal = ringkasan.total_siswa_aktif || 0;
+      const countNilai = pesertaArr[toIdx] !== undefined ? pesertaArr[toIdx] : defaultTotal;
+
+      document.getElementById('kurikulumMetaSummary').textContent =
+        `${idTo} · ${mapelLabels[mapelKey]} · ${countNilai} data nilai`;
+
+      document.getElementById('badgeMapelAktif').textContent = mapelShort[mapelKey];
+      document.getElementById('legendTrenKurikulum').textContent =
+        `Rata-rata seluruh siswa kelas IX (${mapelShort[mapelKey]})`;
+
+      // 1. Render Horizontal Bars Per Rombel
+      const perRombelMapel = grafik.per_rombel_mapel || {};
+      const fallbackRombel = grafik.per_rombel || {};
+      const activeRombelObj = perRombelMapel[mapelKey] || fallbackRombel;
+      const isFallbackWarning = !perRombelMapel[mapelKey] && mapelKey !== 'gabungan';
+
+      const rombels = Object.keys(activeRombelObj).length
+        ? Object.keys(activeRombelObj)
+        : ['IX-A', 'IX-B', 'IX-C', 'IX-D'];
+
+      const barsContainer = document.getElementById('rombelHorizontalBars');
+      let barsHtml = rombels.map(rb => {
+        const arr = activeRombelObj[rb] || [];
+        const rawVal = arr[toIdx];
+        const hasVal = rawVal !== null && rawVal !== undefined && !isNaN(Number(rawVal));
+        const numVal = hasVal ? Math.max(0, Math.min(100, Number(rawVal))) : 0;
+
+        return `
+          <div class="rombel-bar-row">
+            <div class="rombel-name">${escapeHtml(rb)}</div>
+            <div class="rombel-track">
+              <div class="rombel-fill" style="width: ${numVal}%;"></div>
+            </div>
+            <div class="rombel-score">${hasVal ? numVal.toFixed(2) : '-'}</div>
+          </div>
+        `;
+      }).join('');
+
+      if (isFallbackWarning) {
+        barsHtml += `
+          <div style="font-size:12px; color:#92400E; background:var(--accent-light); padding:8px 12px; border-radius:8px; margin-top:4px;">
+            Catatan: Data per rombel saat ini menampilkan rata-rata gabungan. Perbarui <code>ApiEndpoint.gs</code> untuk memisahkan nilai ${escapeHtml(mapelShort[mapelKey])} per kelas.
+          </div>
+        `;
+      }
+
+      barsContainer.innerHTML = barsHtml;
+
+      // 2. Render Line Chart Tren Hasil Seluruh Periode TO (dengan label angka di atas titik)
+      const trendSeries = mapelKey === 'literasi'
+        ? (grafik.literasi_angkatan || [])
+        : (mapelKey === 'numerasi' ? (grafik.numerasi_angkatan || []) : (grafik.gabungan_angkatan || []));
+
+      const xLabels = (grafik.labels || []).map((lbl, i) => {
+        const code = (masterTO[i] && masterTO[i].ID_TO) ? String(masterTO[i].ID_TO).trim() : lbl;
+        const jml = pesertaArr[i] !== undefined ? pesertaArr[i] : defaultTotal;
+        return [code, `${jml} siswa`];
+      });
+
+      if (appState.chartTrenKurikulum) appState.chartTrenKurikulum.destroy();
+      const ctxTrend = document.getElementById('chartTrenKurikulum').getContext('2d');
+      appState.chartTrenKurikulum = new Chart(ctxTrend, {
+        type: 'line',
+        data: {
+          labels: xLabels,
+          datasets: [
+            {
+              label: `Rata-rata seluruh siswa kelas IX (${mapelShort[mapelKey]})`,
+              data: trendSeries,
+              borderColor: '#0B4D3B',
+              backgroundColor: '#0B4D3B',
+              borderWidth: 3,
+              tension: 0,
+              pointRadius: 5,
+              pointHoverRadius: 7,
+              pointBackgroundColor: '#0B4D3B',
+              pointBorderColor: '#FFFFFF',
+              pointBorderWidth: 1.5,
+              spanGaps: false
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          layout: {
+            padding: { top: 26, right: 24, left: 8, bottom: 4 }
+          },
+          scales: {
+            y: {
+              min: 0,
+              max: 100,
+              ticks: {
+                stepSize: 25,
+                color: '#64748B',
+                font: { size: 12, weight: '600' }
+              },
+              grid: {
+                color: '#E2E8F0'
+              },
+              border: { display: false }
+            },
+            x: {
+              ticks: {
+                color: '#334155',
+                font: { size: 12, weight: '700' }
+              },
+              grid: { display: false },
+              border: { color: '#CBD5E1' }
+            }
+          },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                title(items) {
+                  const idx = items[0].dataIndex;
+                  return (grafik.labels && grafik.labels[idx]) || items[0].label;
+                },
+                label(ctx) {
+                  const v = ctx.parsed.y;
+                  return v !== null ? `${mapelShort[mapelKey]}: ${Number(v).toFixed(2)}` : 'Belum ada data';
+                }
+              }
+            }
+          }
+        },
+        plugins: [pointValueLabelPlugin]
+      });
     }
 
     function setupCountdown(timeline) {
@@ -1879,7 +2275,6 @@
     function renderKisiKisi(kisiList) {
       const container = document.getElementById('kisiContainer');
 
-      // Kelompokkan agar tampil ringkas 1 baris dokumen penuh untuk setiap mata pelajaran
       const perMapel = [];
       const seenMapel = new Set();
 
@@ -1891,7 +2286,6 @@
           seenMapel.add(key);
           perMapel.push(item);
         } else {
-          // Jika ada baris berikutnya dengan mapel sama dan punya link PDF, pakai link PDF-nya
           const existing = perMapel.find(x => String(x.MAPEL || '').trim().toLowerCase() === key);
           if (existing && !String(existing.LINK_PDF_KISI || '').trim() && String(item.LINK_PDF_KISI || '').trim()) {
             existing.LINK_PDF_KISI = item.LINK_PDF_KISI;
@@ -2223,7 +2617,6 @@
       const val = String(raw || '').trim();
       if (!val) return null;
 
-      // Deteksi ID Google Drive dari link Drive maupun ID langsung
       const driveMatch = val.match(/(?:\/d\/|id=|^[-\w]{25,}$)/) ? val.match(/[-\w]{25,}/) : null;
       if (driveMatch && (val.includes('drive.google.com') || /^[-\w]{25,}$/.test(val))) {
         const fid = driveMatch[0];
