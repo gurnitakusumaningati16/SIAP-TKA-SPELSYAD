@@ -399,7 +399,7 @@
     }
 
     .btn-sm {
-      padding: 7px 12px;
+      padding: 7px 14px;
       font-size: 12.5px;
       border-radius: 8px;
     }
@@ -665,7 +665,7 @@
     tbody td {
       padding: 12px 14px;
       border-bottom: 1px solid var(--border);
-      vertical-align: top;
+      vertical-align: middle;
     }
 
     tbody tr:last-child td {
@@ -674,40 +674,6 @@
 
     tbody tr:hover {
       background: #F8FAFC;
-    }
-
-    /* FILTER BAR KISI-KISI */
-    .filter-bar {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      margin-bottom: 16px;
-      align-items: center;
-    }
-
-    .filter-chips {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-
-    .chip {
-      padding: 7px 14px;
-      border-radius: 999px;
-      border: 1px solid var(--border);
-      background: #FFFFFF;
-      color: var(--text-muted);
-      font-family: inherit;
-      font-size: 12.5px;
-      font-weight: 700;
-      cursor: pointer;
-      transition: all 0.15s;
-    }
-
-    .chip.active, .chip:hover {
-      background: var(--primary);
-      color: #FFFFFF;
-      border-color: var(--primary);
     }
 
     /* RESOURCE CARDS (BANK SOAL & CBT) */
@@ -727,6 +693,63 @@
       justify-content: space-between;
       gap: 14px;
       box-shadow: var(--shadow);
+    }
+
+    /* PDF PREVIEW MODAL */
+    .modal-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.72);
+      z-index: 999;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    .modal-backdrop.open {
+      display: flex;
+    }
+
+    .modal-box {
+      background: #FFFFFF;
+      width: 100%;
+      max-width: 980px;
+      height: 88vh;
+      border-radius: 16px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+    }
+
+    .modal-header {
+      background: var(--primary-dark);
+      color: #FFFFFF;
+      padding: 14px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .modal-title {
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .modal-body {
+      flex: 1;
+      background: #E2E8F0;
+      position: relative;
+    }
+
+    .modal-body iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      display: block;
     }
 
     /* CBT INTERFACE */
@@ -900,7 +923,7 @@
     }
 
     @media print {
-      .topbar, .nav-bar, .no-print, footer {
+      .topbar, .nav-bar, .no-print, footer, .modal-backdrop {
         display: none !important;
       }
       .container {
@@ -978,7 +1001,7 @@
           <span class="hero-tag" id="heroPeriodeBadge">PERSIAPAN TKA KELAS IX</span>
           <h2>Pantau Perkembangan Literasi &amp; Numerasi Secara Terukur</h2>
           <p>
-            Akses rekapitulasi capaian Try Out angkatan, kisi-kisi resmi Tes Kemampuan Akademik (TKA),
+            Akses rekapitulasi capaian Try Out angkatan, dokumen resmi kisi-kisi Tes Kemampuan Akademik (TKA),
             unduh laporan analisis individual bertanda tangan elektronik, serta berlatih soal mandiri.
           </p>
           <div class="hero-actions">
@@ -1220,24 +1243,14 @@
     </section>
 
     <!-- ============================================================
-         TAB 3: KISI-KISI TKA
+         TAB 3: KISI-KISI TKA (RINGKAS PER MAPEL + PENAMPIL DOKUMEN FULL)
          ============================================================ -->
     <section id="tab-kisikisi" class="tab-panel">
       <div class="card">
         <div class="card-header">
           <div>
             <div class="card-title">Kisi-Kisi Tes Kemampuan Akademik (TKA)</div>
-            <div class="card-subtitle">Acuan materi, elemen konten, indikator kompetensi, dan level kognitif ujian</div>
-          </div>
-        </div>
-
-        <div class="filter-bar">
-          <div class="filter-chips" id="kisiFilterChips">
-            <button class="chip active" onclick="filterKisiMapel('SEMUA', this)">Semua Mapel</button>
-          </div>
-          <div style="flex:1; min-width:220px;">
-            <input type="text" id="searchKisiInput" class="form-control" style="padding:8px 12px; font-size:13px;"
-                   placeholder="Cari elemen konten, indikator, atau level..." oninput="renderKisiKisi()" />
+            <div class="card-subtitle">Klik tombol dokumen pada masing-masing mata pelajaran untuk menampilkan kisi-kisi lengkap</div>
           </div>
         </div>
 
@@ -1337,6 +1350,24 @@
 
   </main>
 
+  <!-- MODAL PENAMPIL DOKUMEN KISI-KISI FULL -->
+  <div id="docPreviewModal" class="modal-backdrop" onclick="if(event.target === this) closeDocModal()">
+    <div class="modal-box">
+      <div class="modal-header">
+        <div class="modal-title" id="docModalTitle">Dokumen Kisi-Kisi TKA</div>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <a id="docModalExternalLink" href="#" target="_blank" rel="noopener" class="btn btn-accent btn-sm">
+            Buka Tab Baru / Unduh
+          </a>
+          <button type="button" class="btn btn-ghost-light btn-sm" onclick="closeDocModal()">Tutup</button>
+        </div>
+      </div>
+      <div class="modal-body">
+        <iframe id="docModalIframe" src="" title="Pratinjau Dokumen Kisi-Kisi TKA"></iframe>
+      </div>
+    </div>
+  </div>
+
   <!-- FOOTER -->
   <footer>
     <div class="footer-inner">
@@ -1358,7 +1389,6 @@
     let appState = {
       periode: '',
       initData: null,
-      kisiMapelFilter: 'SEMUA',
       chartAngkatan: null,
       chartRombel: null,
       chartSiswa: null,
@@ -1377,6 +1407,9 @@
        ===================================================================== */
     document.addEventListener('DOMContentLoaded', () => {
       loadInitData('');
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeDocModal();
+      });
     });
 
     async function loadInitData(requestedPeriode) {
@@ -1403,19 +1436,16 @@
 
         populatePeriodeDropdown(data.daftar_periode, data.periode_terpilih);
         renderBeranda(data);
-        buildKisiFilterChips(data.kisi_kisi || []);
-        renderKisiKisi();
+        renderKisiKisi(data.kisi_kisi || []);
         renderBankSoal(data.bank_soal || []);
         renderFooterPengesahan(data.pengesahan);
 
         loader.style.display = 'none';
 
-        // Tampilkan tab aktif saat ini
         const activeBtn = document.querySelector('.nav-btn.active');
         const activeTab = activeBtn ? activeBtn.getAttribute('data-tab') : 'beranda';
         document.getElementById(`tab-${activeTab}`).classList.add('active');
 
-        // Pulihkan sesi login siswa jika ada di sessionStorage
         const savedSession = sessionStorage.getItem('tka_siswa_auth');
         if (savedSession) {
           try {
@@ -1489,7 +1519,6 @@
       if (appState.countdownInterval) clearInterval(appState.countdownInterval);
 
       const now = new Date();
-      // Cari target utama yang belum lewat, atau kegiatan mendatang terdekat
       let targetItem = timeline.find(t =>
         String(t.IS_TARGET_UTAMA || '').toUpperCase() === 'YA' &&
         t.TANGGAL_ISO && new Date(t.TANGGAL_ISO + 'T07:30:00+07:00') > now
@@ -1711,7 +1740,6 @@
       document.getElementById('repRombel').textContent = s.rombel || '-';
       document.getElementById('repTahun').textContent = s.tahun_ajaran || s.id_periode || '-';
 
-      // Dokumen PDF TTE
       const pdfSub = document.getElementById('pdfInfoSubtitle');
       const pdfBtns = document.getElementById('pdfActionButtons');
       if (data.pdf_tte && data.pdf_tte.url_view) {
@@ -1729,7 +1757,6 @@
         pdfBtns.innerHTML = `<span class="badge badge-warning">PDF Belum Terbit</span>`;
       }
 
-      // Narasi Analisis
       const nar = data.analisis_narasi || {};
       document.getElementById('narasiPerkembangan').textContent = nar.perkembangan || '-';
       document.getElementById('narasiPerbandingan').textContent = nar.perbandingan || '-';
@@ -1744,7 +1771,6 @@
         kelAlert.style.display = 'none';
       }
 
-      // Tabel & Grafik Riwayat TO Siswa
       const riwayat = data.riwayat_to || [];
       const tbody = document.getElementById('tbodyNilaiSiswa');
       if (!riwayat.length) {
@@ -1811,7 +1837,6 @@
         }
       });
 
-      // Hasil TKA Resmi jika sudah ada
       const cardTKA = document.getElementById('cardHasilTKA');
       const kontenTKA = document.getElementById('kontenHasilTKA');
       if (data.hasil_tka && (data.hasil_tka.NILAI_LITERASI || data.hasil_tka.NILAI_NUMERASI || data.hasil_tka.RATA_RATA)) {
@@ -1849,50 +1874,33 @@
     }
 
     /* =====================================================================
-       RENDER TAB 3: KISI-KISI TKA
+       RENDER TAB 3: KISI-KISI TKA (1 BARIS PER MAPEL + PREVIEW DOKUMEN FULL)
        ===================================================================== */
-    function buildKisiFilterChips(kisiList) {
-      const chipsWrap = document.getElementById('kisiFilterChips');
-      const mapelSet = new Set();
-      kisiList.forEach(k => {
-        if (k.MAPEL && String(k.MAPEL).trim()) {
-          mapelSet.add(String(k.MAPEL).trim());
+    function renderKisiKisi(kisiList) {
+      const container = document.getElementById('kisiContainer');
+
+      // Kelompokkan agar tampil ringkas 1 baris dokumen penuh untuk setiap mata pelajaran
+      const perMapel = [];
+      const seenMapel = new Set();
+
+      (kisiList || []).forEach(item => {
+        const mapelName = String(item.MAPEL || '').trim();
+        if (!mapelName) return;
+        const key = mapelName.toLowerCase();
+        if (!seenMapel.has(key)) {
+          seenMapel.add(key);
+          perMapel.push(item);
+        } else {
+          // Jika ada baris berikutnya dengan mapel sama dan punya link PDF, pakai link PDF-nya
+          const existing = perMapel.find(x => String(x.MAPEL || '').trim().toLowerCase() === key);
+          if (existing && !String(existing.LINK_PDF_KISI || '').trim() && String(item.LINK_PDF_KISI || '').trim()) {
+            existing.LINK_PDF_KISI = item.LINK_PDF_KISI;
+          }
         }
       });
 
-      appState.kisiMapelFilter = 'SEMUA';
-      let html = `<button class="chip active" onclick="filterKisiMapel('SEMUA', this)">Semua Mapel (${kisiList.length})</button>`;
-      mapelSet.forEach(m => {
-        const count = kisiList.filter(k => String(k.MAPEL || '').trim() === m).length;
-        html += `<button class="chip" onclick="filterKisiMapel('${escapeHtml(m)}', this)">${escapeHtml(m)} (${count})</button>`;
-      });
-      chipsWrap.innerHTML = html;
-    }
-
-    function filterKisiMapel(mapel, btnEl) {
-      appState.kisiMapelFilter = mapel;
-      document.querySelectorAll('#kisiFilterChips .chip').forEach(c => c.classList.remove('active'));
-      if (btnEl) btnEl.classList.add('active');
-      renderKisiKisi();
-    }
-
-    function renderKisiKisi() {
-      const container = document.getElementById('kisiContainer');
-      const allKisi = (appState.initData && appState.initData.kisi_kisi) ? appState.initData.kisi_kisi : [];
-      const keyword = (document.getElementById('searchKisiInput').value || '').toLowerCase().trim();
-
-      const filtered = allKisi.filter(item => {
-        const matchMapel = appState.kisiMapelFilter === 'SEMUA' ||
-          String(item.MAPEL || '').trim() === appState.kisiMapelFilter;
-        if (!matchMapel) return false;
-        if (!keyword) return true;
-
-        const hay = `${item.MAPEL} ${item.ELEMEN_KONTEN} ${item.KOMPETENSI_INDIKATOR} ${item.LEVEL_KOGNITIF} ${item.BENTUK_SOAL}`.toLowerCase();
-        return hay.includes(keyword);
-      });
-
-      if (!filtered.length) {
-        container.innerHTML = `<div class="empty-state">Tidak ditemukan data kisi-kisi yang sesuai dengan filter saat ini.</div>`;
+      if (!perMapel.length) {
+        container.innerHTML = `<div class="empty-state">Dokumen kisi-kisi TKA belum dipublikasikan pada periode ini.</div>`;
         return;
       }
 
@@ -1901,34 +1909,34 @@
           <table>
             <thead>
               <tr>
-                <th style="width:52px;">No</th>
-                <th style="width:130px;">Mata Pelajaran</th>
-                <th style="width:200px;">Elemen Konten</th>
-                <th>Kompetensi &amp; Indikator Soal</th>
-                <th style="width:140px;">Level Kognitif</th>
-                <th style="width:140px;">Bentuk Soal</th>
-                <th style="width:130px;">Dokumen</th>
+                <th style="width:60px;">No</th>
+                <th>Mata Pelajaran</th>
+                <th style="width:220px; text-align:right;">Dokumen Kisi-Kisi</th>
               </tr>
             </thead>
             <tbody>
-              ${filtered.map((k, idx) => {
+              ${perMapel.map((k, idx) => {
                 const mapel = String(k.MAPEL || '-').trim();
                 const isLit = mapel.toLowerCase().includes('literasi');
                 const badgeCls = isLit ? 'badge-success' : 'badge-warning';
-                const pdfUrl = normalizeDriveUrl(k.LINK_PDF_KISI);
+                const docLinks = parseDocumentLinks(k.LINK_PDF_KISI);
 
                 return `
                   <tr>
-                    <td><strong>${escapeHtml(k.URUTAN || idx + 1)}</strong></td>
-                    <td><span class="badge ${badgeCls}">${escapeHtml(mapel)}</span></td>
-                    <td><strong>${escapeHtml(k.ELEMEN_KONTEN || '-')}</strong></td>
-                    <td>${escapeHtml(k.KOMPETENSI_INDIKATOR || '-')}</td>
-                    <td><span class="badge badge-info">${escapeHtml(k.LEVEL_KOGNITIF || '-')}</span></td>
-                    <td>${escapeHtml(k.BENTUK_SOAL || '-')}</td>
+                    <td><strong>${idx + 1}</strong></td>
                     <td>
-                      ${pdfUrl
-                        ? `<a href="${escapeHtml(pdfUrl)}" target="_blank" rel="noopener" class="btn btn-outline btn-sm">Unduh PDF</a>`
-                        : `<span style="font-size:12px; color:var(--text-soft);">-</span>`
+                      <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                        <span class="badge ${badgeCls}" style="font-size:13px; padding:5px 12px;">${escapeHtml(mapel)}</span>
+                        <span style="font-size:13px; color:var(--text-muted);">Kisi-Kisi Lengkap Mata Pelajaran ${escapeHtml(mapel)}</span>
+                      </div>
+                    </td>
+                    <td style="text-align:right;">
+                      ${docLinks
+                        ? `<button type="button" class="btn btn-primary btn-sm"
+                             onclick="openDocModal('Kisi-Kisi TKA — ${escapeHtml(mapel)}', '${escapeHtml(docLinks.previewUrl)}', '${escapeHtml(docLinks.viewUrl)}')">
+                             Lihat Dokumen
+                           </button>`
+                        : `<span class="badge badge-neutral">Dokumen Segera Tersedia</span>`
                       }
                     </td>
                   </tr>
@@ -1938,6 +1946,19 @@
           </table>
         </div>
       `;
+    }
+
+    function openDocModal(title, previewUrl, viewUrl) {
+      document.getElementById('docModalTitle').textContent = title;
+      document.getElementById('docModalIframe').src = previewUrl;
+      document.getElementById('docModalExternalLink').href = viewUrl || previewUrl;
+      document.getElementById('docPreviewModal').classList.add('open');
+    }
+
+    function closeDocModal() {
+      const modal = document.getElementById('docPreviewModal');
+      modal.classList.remove('open');
+      document.getElementById('docModalIframe').src = '';
     }
 
     /* =====================================================================
@@ -2074,14 +2095,12 @@
       const idx = appState.cbtCurrentIdx;
       const soal = paket.soal[idx];
 
-      // Nomor navigasi
       document.getElementById('cbtNavNumbers').innerHTML = paket.soal.map((s, i) => {
         const isAns = !!appState.cbtAnswers[i];
         const isCurr = i === idx;
         return `<button class="num-btn ${isAns ? 'answered' : ''} ${isCurr ? 'current' : ''}" onclick="jumpSoal(${i})">${i + 1}</button>`;
       }).join('');
 
-      // Area Soal
       const selectedKey = appState.cbtAnswers[idx] || '';
       const opsiKeys = ['A', 'B', 'C', 'D'];
 
@@ -2200,14 +2219,30 @@
         `Kepala Sekolah: ${pengesahan.kepala_sekolah || '-'} (NIPA. ${pengesahan.nipa || '-'})`;
     }
 
-    function normalizeDriveUrl(raw) {
+    function parseDocumentLinks(raw) {
       const val = String(raw || '').trim();
-      if (!val) return '';
-      if (val.startsWith('http://') || val.startsWith('https://')) return val;
-      if (/^[-\w]{20,}$/.test(val)) {
-        return `https://drive.google.com/file/d/${val}/view`;
+      if (!val) return null;
+
+      // Deteksi ID Google Drive dari link Drive maupun ID langsung
+      const driveMatch = val.match(/(?:\/d\/|id=|^[-\w]{25,}$)/) ? val.match(/[-\w]{25,}/) : null;
+      if (driveMatch && (val.includes('drive.google.com') || /^[-\w]{25,}$/.test(val))) {
+        const fid = driveMatch[0];
+        return {
+          previewUrl: `https://drive.google.com/file/d/${fid}/preview`,
+          viewUrl: `https://drive.google.com/file/d/${fid}/view`
+        };
       }
-      return '';
+
+      if (val.startsWith('http://') || val.startsWith('https://')) {
+        return { previewUrl: val, viewUrl: val };
+      }
+
+      return null;
+    }
+
+    function normalizeDriveUrl(raw) {
+      const parsed = parseDocumentLinks(raw);
+      return parsed ? parsed.viewUrl : '';
     }
 
     function escapeHtml(str) {
