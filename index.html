@@ -1557,9 +1557,7 @@
       <div>
         <strong>SMP Al-Irsyad Surabaya</strong> — Sistem Informasi Monitoring Try Out &amp; TKA Terpadu
       </div>
-      <div id="footerPengesahan">
-        Mengetahui: Kepala SMP Al-Irsyad Surabaya
-      </div>
+            </div>
     </div>
   </footer>
 
@@ -1647,8 +1645,7 @@
         renderBeranda(data);
         renderKisiKisi(data.kisi_kisi || []);
         renderBankSoal(data.bank_soal || []);
-        renderFooterPengesahan(data.pengesahan);
-
+        
         loader.style.display = 'none';
 
         const activeBtn = document.querySelector('.nav-btn.active');
@@ -2607,12 +2604,7 @@
     /* =====================================================================
        HELPER UTILITAS
        ===================================================================== */
-    function renderFooterPengesahan(pengesahan) {
-      if (!pengesahan) return;
-      document.getElementById('footerPengesahan').textContent =
-        `Kepala Sekolah: ${pengesahan.kepala_sekolah || '-'} (NIPA. ${pengesahan.nipa || '-'})`;
-    }
-
+    
     function parseDocumentLinks(raw) {
       const val = String(raw || '').trim();
       if (!val) return null;
