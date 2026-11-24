@@ -977,6 +977,93 @@
       color: #FFFFFF;
     }
 
+/* TABEL PERNYATAAN BENAR / SALAH & CHECKBOX PGK */
+    .bs-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 14px;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .bs-table th {
+      background: #F1F5F9;
+      padding: 11px 14px;
+      font-size: 13px;
+      font-weight: 700;
+      border-bottom: 1.5px solid var(--border);
+    }
+
+    .bs-table td {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border);
+      font-size: 14px;
+    }
+
+    .bs-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .bs-choice-cell {
+      text-align: center;
+      width: 90px;
+    }
+
+    .bs-pill-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 68px;
+      padding: 6px 12px;
+      border-radius: 8px;
+      border: 1.5px solid var(--border);
+      background: #FFFFFF;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .bs-pill-btn:hover {
+      border-color: var(--primary);
+    }
+
+    .bs-pill-btn.active-b {
+      background: var(--success-bg);
+      border-color: var(--success);
+      color: #065F46;
+    }
+
+    .bs-pill-btn.active-s {
+      background: var(--danger-bg);
+      border-color: var(--danger);
+      color: #991B1B;
+    }
+
+    .pgk-check {
+      width: 24px;
+      height: 24px;
+      border-radius: 6px;
+      border: 2px solid #94A3B8;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 13px;
+      flex-shrink: 0;
+      margin-top: 2px;
+      background: #FFFFFF;
+    }
+
+    .opsi-item.selected .pgk-check {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: #FFFFFF;
+    }
+
     /* ALERTS & LOADER */
     .alert {
       padding: 13px 16px;
@@ -2481,40 +2568,169 @@
       }, 1000);
     }
 
+    function getTipeSoal(soal) {
+      const t = String(soal.tipe || 'PG').trim().toUpperCase();
+      if (t === 'PGK' || t === 'KOMPLEKS' || t === 'PILIHAN GANDA KOMPLEKS') return 'PGK';
+      if (t === 'BS' || t === 'BENAR SALAH' || t === 'BENAR/SALAH') return 'BS';
+      return 'PG';
+    }
+
+    function getActiveOpsiKeys(soal) {
+      return ['A', 'B', 'C', 'D', 'E'].filter(k => soal.opsi && String(soal.opsi[k] || '').trim() !== '');
+    }
+
+    function isSoalTerjawab(idx) {
+      const paket = appState.cbtActivePaket;
+      const soal = paket.soal[idx];
+      const ans = appState.cbtAnswers[idx];
+      const tipe = getTipeSoal(soal);
+
+      if (tipe === 'PGK') {
+        return Array.isArray(ans) && ans.length > 0;
+      }
+      if (tipe === 'BS') {
+        const keys = getActiveOpsiKeys(soal);
+        return ans && typeof ans === 'object' && keys.every((_, rIdx) => ans[rIdx] === 'B' || ans[rIdx] === 'S');
+      }
+      return typeof ans === 'string' && ans !== '';
+    }
+
+    function evaluasiJawabanSoal(soal, userAns) {
+      const tipe = getTipeSoal(soal);
+      const rawKunci = String(soal.kunci || '').trim().toUpperCase();
+
+      if (tipe === 'PGK') {
+        const keyArr = rawKunci.split(',').map(x => x.trim()).filter(Boolean).sort();
+        const usrArr = Array.isArray(userAns) ? [...userAns].map(x => x.trim().toUpperCase()).sort() : [];
+        const isCorrect = keyArr.length > 0 &&
+          usrArr.length === keyArr.length &&
+          usrArr.every((val, i) => val === keyArr[i]);
+        return {
+          isCorrect,
+          userText: usrArr.length ? usrArr.join(', ') : 'Tidak Dijawab',
+          keyText: keyArr.join(', ')
+        };
+      }
+
+      if (tipe === 'BS') {
+        const keys = getActiveOpsiKeys(soal);
+        const keyArr = rawKunci.split(',').map(x => x.trim()).filter(Boolean);
+        const usrObj = (userAns && typeof userAns === 'object') ? userAns : {};
+        const usrArr = keys.map((_, i) => usrObj[i] || '-');
+        const isCorrect = keyArr.length === keys.length &&
+          keys.every((_, i) => usrObj[i] === keyArr[i]);
+        return {
+          isCorrect,
+          userText: usrArr.every(x => x === '-') ? 'Tidak Dijawab' : usrArr.join(', '),
+          keyText: keyArr.join(', ')
+        };
+      }
+
+      // Default: PG Tunggal
+      const usr = typeof userAns === 'string' ? userAns.trim().toUpperCase() : '';
+      const isCorrect = usr !== '' && usr === rawKunci;
+      return {
+        isCorrect,
+        userText: usr ? `${usr}${soal.opsi[usr] ? ` (${soal.opsi[usr]})` : ''}` : 'Tidak Dijawab',
+        keyText: `${rawKunci}${soal.opsi[rawKunci] ? ` (${soal.opsi[rawKunci]})` : ''}`
+      };
+    }
+
     function renderSoalCBT() {
       const paket = appState.cbtActivePaket;
       const idx = appState.cbtCurrentIdx;
       const soal = paket.soal[idx];
+      const tipe = getTipeSoal(soal);
+      const opsiKeys = getActiveOpsiKeys(soal);
 
       document.getElementById('cbtNavNumbers').innerHTML = paket.soal.map((s, i) => {
-        const isAns = !!appState.cbtAnswers[i];
+        const isAns = isSoalTerjawab(i);
         const isCurr = i === idx;
         return `<button class="num-btn ${isAns ? 'answered' : ''} ${isCurr ? 'current' : ''}" onclick="jumpSoal(${i})">${i + 1}</button>`;
       }).join('');
 
-      const selectedKey = appState.cbtAnswers[idx] || '';
-      const opsiKeys = ['A', 'B', 'C', 'D'];
+      const badgeTipeMap = {
+        PG: '<span class="badge badge-neutral">Pilihan Ganda</span>',
+        PGK: '<span class="badge badge-info">Pilihan Ganda Kompleks (Pilih lebih dari satu)</span>',
+        BS: '<span class="badge badge-warning">Pernyataan Benar / Salah</span>'
+      };
+
+      let inputHtml = '';
+
+      if (tipe === 'PGK') {
+        const selectedArr = Array.isArray(appState.cbtAnswers[idx]) ? appState.cbtAnswers[idx] : [];
+        inputHtml = `
+          <div class="opsi-list">
+            ${opsiKeys.map(k => {
+              const isSel = selectedArr.includes(k);
+              return `
+                <div class="opsi-item ${isSel ? 'selected' : ''}" onclick="toggleJawabanPGK('${k}')">
+                  <div class="pgk-check">${isSel ? '✓' : ''}</div>
+                  <div style="font-size:14px; padding-top:2px;"><strong>${k}.</strong> ${escapeHtml(soal.opsi[k])}</div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        `;
+      } else if (tipe === 'BS') {
+        const selectedObj = (appState.cbtAnswers[idx] && typeof appState.cbtAnswers[idx] === 'object')
+          ? appState.cbtAnswers[idx]
+          : {};
+        inputHtml = `
+          <table class="bs-table">
+            <thead>
+              <tr>
+                <th style="text-align:left;">Pernyataan</th>
+                <th style="text-align:center; width:95px;">Benar</th>
+                <th style="text-align:center; width:95px;">Salah</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${opsiKeys.map((k, rIdx) => {
+                const val = selectedObj[rIdx] || '';
+                return `
+                  <tr>
+                    <td>${escapeHtml(soal.opsi[k])}</td>
+                    <td class="bs-choice-cell">
+                      <button type="button" class="bs-pill-btn ${val === 'B' ? 'active-b' : ''}" onclick="pilihJawabanBS(${rIdx}, 'B')">Benar</button>
+                    </td>
+                    <td class="bs-choice-cell">
+                      <button type="button" class="bs-pill-btn ${val === 'S' ? 'active-s' : ''}" onclick="pilihJawabanBS(${rIdx}, 'S')">Salah</button>
+                    </td>
+                  </tr>
+                `;
+              }).join('')}
+            </tbody>
+          </table>
+        `;
+      } else {
+        const selectedKey = typeof appState.cbtAnswers[idx] === 'string' ? appState.cbtAnswers[idx] : '';
+        inputHtml = `
+          <div class="opsi-list">
+            ${opsiKeys.map(k => {
+              const isSel = selectedKey === k;
+              return `
+                <div class="opsi-item ${isSel ? 'selected' : ''}" onclick="pilihJawabanPG('${k}')">
+                  <div class="opsi-key">${k}</div>
+                  <div style="font-size:14px; padding-top:2px;">${escapeHtml(soal.opsi[k])}</div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        `;
+      }
 
       document.getElementById('cbtQuestionArea').innerHTML = `
-        <div style="font-size:13px; font-weight:700; color:var(--primary); margin-bottom:10px;">
-          Soal Nomor ${idx + 1} dari ${paket.soal.length}
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap; margin-bottom:10px;">
+          <div style="font-size:13px; font-weight:700; color:var(--primary);">
+            Soal Nomor ${idx + 1} dari ${paket.soal.length}
+          </div>
+          ${badgeTipeMap[tipe]}
         </div>
         ${soal.stimulus ? `<div class="stimulus-box">${escapeHtml(soal.stimulus)}</div>` : ''}
         ${soal.gambar_url ? `<div style="margin-bottom:14px;"><img src="${escapeHtml(soal.gambar_url)}" alt="Ilustrasi Soal" style="max-width:100%; max-height:320px; border-radius:10px; border:1px solid var(--border);" /></div>` : ''}
         <div style="font-size:15px; font-weight:600; color:var(--text);">${escapeHtml(soal.pertanyaan)}</div>
-        <div class="opsi-list">
-          ${opsiKeys.map(k => {
-            const teksOpsi = soal.opsi[k];
-            if (!teksOpsi) return '';
-            const isSel = selectedKey === k;
-            return `
-              <div class="opsi-item ${isSel ? 'selected' : ''}" onclick="pilihJawabanCBT('${k}')">
-                <div class="opsi-key">${k}</div>
-                <div style="font-size:14px; padding-top:2px;">${escapeHtml(teksOpsi)}</div>
-              </div>
-            `;
-          }).join('')}
-        </div>
+        ${inputHtml}
       `;
 
       document.getElementById('btnPrevSoal').disabled = idx === 0;
@@ -2528,8 +2744,28 @@
       }
     }
 
-    function pilihJawabanCBT(key) {
+    function pilihJawabanPG(key) {
       appState.cbtAnswers[appState.cbtCurrentIdx] = key;
+      renderSoalCBT();
+    }
+
+    function toggleJawabanPGK(key) {
+      const idx = appState.cbtCurrentIdx;
+      const curr = Array.isArray(appState.cbtAnswers[idx]) ? [...appState.cbtAnswers[idx]] : [];
+      const pos = curr.indexOf(key);
+      if (pos >= 0) curr.splice(pos, 1);
+      else curr.push(key);
+      appState.cbtAnswers[idx] = curr;
+      renderSoalCBT();
+    }
+
+    function pilihJawabanBS(rowIdx, val) {
+      const idx = appState.cbtCurrentIdx;
+      const curr = (appState.cbtAnswers[idx] && typeof appState.cbtAnswers[idx] === 'object')
+        ? { ...appState.cbtAnswers[idx] }
+        : {};
+      curr[rowIdx] = val;
+      appState.cbtAnswers[idx] = curr;
       renderSoalCBT();
     }
 
@@ -2549,16 +2785,19 @@
     function selesaiUjianCBT(isTimeUp) {
       const paket = appState.cbtActivePaket;
       if (!isTimeUp) {
-        const terjawab = Object.keys(appState.cbtAnswers).length;
-        const konfirmasi = confirm(`Anda telah menjawab ${terjawab} dari ${paket.soal.length} soal. Yakin ingin mengakhiri latihan dan melihat pembahasan?`);
+        let terjawab = 0;
+        paket.soal.forEach((_, i) => { if (isSoalTerjawab(i)) terjawab++; });
+        const konfirmasi = confirm(`Anda telah menjawab lengkap ${terjawab} dari ${paket.soal.length} soal. Yakin ingin mengakhiri latihan dan melihat pembahasan?`);
         if (!konfirmasi) return;
       }
 
       if (appState.cbtTimerInterval) clearInterval(appState.cbtTimerInterval);
 
       let benar = 0;
-      paket.soal.forEach((s, i) => {
-        if ((appState.cbtAnswers[i] || '') === s.kunci) benar++;
+      const hasilEvaluasi = paket.soal.map((s, i) => {
+        const res = evaluasiJawabanSoal(s, appState.cbtAnswers[i]);
+        if (res.isCorrect) benar++;
+        return res;
       });
 
       const total = paket.soal.length;
@@ -2575,20 +2814,19 @@
         skor >= 80 ? 'Sangat Baik' : (skor >= 65 ? 'Tuntas Target' : 'Perlu Penguatan');
 
       document.getElementById('cbtReviewList').innerHTML = paket.soal.map((s, i) => {
-        const jwb = appState.cbtAnswers[i] || 'Tidak Dijawab';
-        const isCorrect = jwb === s.kunci;
+        const ev = hasilEvaluasi[i];
         return `
-          <div style="border:1px solid var(--border); border-left:4px solid ${isCorrect ? 'var(--success)' : 'var(--danger)'}; border-radius:12px; padding:16px; background:#FAFCFB;">
+          <div style="border:1px solid var(--border); border-left:4px solid ${ev.isCorrect ? 'var(--success)' : 'var(--danger)'}; border-radius:12px; padding:16px; background:#FAFCFB;">
             <div style="display:flex; justify-content:space-between; gap:8px; margin-bottom:8px; flex-wrap:wrap;">
-              <strong>Soal No. ${i + 1}</strong>
-              <span class="badge ${isCorrect ? 'badge-success' : 'badge-danger'}">
-                ${isCorrect ? 'Benar' : 'Kurang Tepat'}
+              <strong>Soal No. ${i + 1} (${escapeHtml(getTipeSoal(s))})</strong>
+              <span class="badge ${ev.isCorrect ? 'badge-success' : 'badge-danger'}">
+                ${ev.isCorrect ? 'Benar' : 'Kurang Tepat'}
               </span>
             </div>
             <p style="font-size:14px; margin-bottom:10px;">${escapeHtml(s.pertanyaan)}</p>
             <div style="font-size:13px; margin-bottom:8px;">
-              Jawaban Anda: <strong>${escapeHtml(jwb)}</strong> ${s.opsi[jwb] ? `(${escapeHtml(s.opsi[jwb])})` : ''} &nbsp;|&nbsp;
-              Kunci Jawaban: <strong style="color:var(--success);">${escapeHtml(s.kunci)}</strong> ${s.opsi[s.kunci] ? `(${escapeHtml(s.opsi[s.kunci])})` : ''}
+              Jawaban Anda: <strong>${escapeHtml(ev.userText)}</strong> &nbsp;|&nbsp;
+              Kunci Jawaban: <strong style="color:var(--success);">${escapeHtml(ev.keyText)}</strong>
             </div>
             ${s.pembahasan ? `<div style="background:#FFFFFF; border:1px solid var(--border); padding:10px 12px; border-radius:8px; font-size:13px; color:var(--text-muted);"><strong>Pembahasan:</strong> ${escapeHtml(s.pembahasan)}</div>` : ''}
           </div>
