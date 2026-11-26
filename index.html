@@ -3,11 +3,15 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
   <title>Portal TKA & Monitoring Try Out — SMP Al-Irsyad Surabaya</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <style>
     :root {
       --primary: #0B4D3B;
@@ -77,20 +81,33 @@
       gap: 12px;
     }
 
-    .brand-badge {
-      width: 44px;
-      height: 44px;
+    .brand-logo-wrap {
+      width: 48px;
+      height: 48px;
       border-radius: 12px;
-      background: rgba(255, 255, 255, 0.14);
-      border: 1px solid rgba(255, 255, 255, 0.25);
+      background: #FFFFFF;
+      border: 1.5px solid rgba(255, 255, 255, 0.35);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-weight: 800;
-      font-size: 16px;
-      letter-spacing: 0.5px;
-      color: #FCD34D;
+      padding: 4px;
       flex-shrink: 0;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    }
+
+    .brand-logo-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+    }
+
+    .brand-logo-fallback {
+      font-weight: 800;
+      font-size: 13px;
+      color: var(--primary-dark);
+      letter-spacing: 0.4px;
     }
 
     .brand-title h1 {
@@ -1087,6 +1104,22 @@
       text-align: center;
     }
 
+    /* KOTAK EKSPOR PDF & KIRIM PEMBAHASAN CBT */
+    .cbt-bottom-share-card {
+      margin-top: 24px;
+      background: linear-gradient(135deg, #F0FDF4 0%, #E6F2EE 100%);
+      border: 1.5px solid var(--primary-border);
+      border-radius: 14px;
+      padding: 20px;
+    }
+
+    .cbt-bottom-share-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 14px;
+    }
+
     /* ALERTS & LOADER */
     .alert {
       padding: 13px 16px;
@@ -1148,7 +1181,7 @@
     }
 
     @media print {
-      .topbar, .nav-bar, .no-print, footer, .modal-backdrop {
+      .topbar, .nav-bar, .no-print, footer, .modal-backdrop, .cbt-bottom-share-card {
         display: none !important;
       }
       .container {
@@ -1168,10 +1201,13 @@
   <header class="topbar">
     <div class="topbar-inner">
       <div class="brand">
-        <div class="brand-badge">TKA</div>
+        <div class="brand-logo-wrap">
+          <img id="ypasLogoImg" src="logo-ypas.png" alt="Logo YPAS" onerror="tryNextYpasLogo(this)" />
+          <span id="ypasLogoFallback" class="brand-logo-fallback" style="display:none;">YPAS</span>
+        </div>
         <div class="brand-title">
           <h1>Portal TKA &amp; Monitoring Try Out</h1>
-          <p>SMP Al-Irsyad Surabaya — Bidang Kurikulum &amp; Evaluasi</p>
+          <p>SMP Al-Irsyad Surabaya — Sekolah Islam dengan Pendidikan Holistik Qur'ani</p>
         </div>
       </div>
 
@@ -1611,45 +1647,71 @@
 
       <!-- HASIL & PEMBAHASAN CBT -->
       <div id="cbtResultWrapper" class="card" style="display:none;">
-        <div class="card-header">
-          <div>
-            <div class="card-title" id="cbtResTitle">Hasil Simulasi Latihan</div>
-            <div class="card-subtitle">Evaluasi jawaban, analisis penguasaan materi, dan pembahasan setiap butir soal</div>
+        <div id="cbtPrintableArea">
+          <div class="card-header">
+            <div>
+              <div class="card-title" id="cbtResTitle">Hasil Simulasi Latihan</div>
+              <div class="card-subtitle" id="cbtResSubtitle">SMP Al-Irsyad Surabaya — Sekolah Islam dengan Pendidikan Holistik Qur'ani</div>
+            </div>
+            <button class="btn btn-outline btn-sm no-print" data-html2canvas-ignore="true" onclick="kembaliKeLobbyCBT()">&larr; Pilih Paket Lain</button>
           </div>
-          <button class="btn btn-outline btn-sm" onclick="kembaliKeLobbyCBT()">&larr; Pilih Paket Lain</button>
+
+          <div class="kpi-grid" style="grid-template-columns: repeat(3, 1fr);">
+            <div class="kpi-card">
+              <div class="kpi-label">Skor Akhir</div>
+              <div class="kpi-val" id="cbtResSkor">0</div>
+              <div class="kpi-note">Skala maksimal 100</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label">Jawaban Benar</div>
+              <div class="kpi-val" style="color:var(--success);" id="cbtResBenar">0</div>
+              <div class="kpi-note" id="cbtResTotalSoal">dari 0 soal</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label">Predikat Latihan</div>
+              <div class="kpi-val" style="font-size:20px; padding-top:4px;" id="cbtResPredikat">-</div>
+              <div class="kpi-note">Acuan target minimal 65</div>
+            </div>
+          </div>
+
+          <!-- ANALISIS PENGUASAAN PER MATERI -->
+          <div class="narasi-grid" style="margin-bottom:18px;">
+            <div class="narasi-box">
+              <h4>Bagian Materi yang Sudah Dikuasai</h4>
+              <p id="cbtResDikuasai">-</p>
+            </div>
+            <div class="narasi-box accent-border">
+              <h4>Bagian Materi yang Masih Butuh Perbaikan</h4>
+              <p id="cbtResPerbaikan">-</p>
+            </div>
+          </div>
+
+          <div id="cbtReviewList" style="display:flex; flex-direction:column; gap:14px;"></div>
         </div>
 
-        <div class="kpi-grid" style="grid-template-columns: repeat(3, 1fr);">
-          <div class="kpi-card">
-            <div class="kpi-label">Skor Akhir</div>
-            <div class="kpi-val" id="cbtResSkor">0</div>
-            <div class="kpi-note">Skala maksimal 100</div>
+        <!-- PANEL UNDUH PDF & KIRIM VIA EMAIL / WHATSAPP DI BAGIAN PALING BAWAH -->
+        <div class="cbt-bottom-share-card no-print" data-html2canvas-ignore="true">
+          <div style="font-size:16px; font-weight:800; color:var(--primary-dark); margin-bottom:4px;">
+            Simpan &amp; Kirim Dokumen PDF Hasil Latihan + Pembahasan
           </div>
-          <div class="kpi-card">
-            <div class="kpi-label">Jawaban Benar</div>
-            <div class="kpi-val" style="color:var(--success);" id="cbtResBenar">0</div>
-            <div class="kpi-note" id="cbtResTotalSoal">dari 0 soal</div>
-          </div>
-          <div class="kpi-card">
-            <div class="kpi-label">Predikat Latihan</div>
-            <div class="kpi-val" style="font-size:20px; padding-top:4px;" id="cbtResPredikat">-</div>
-            <div class="kpi-note">Acuan target minimal 65</div>
-          </div>
-        </div>
-
-        <!-- ANALISIS PENGUASAAN PER MATERI -->
-        <div class="narasi-grid" style="margin-bottom:18px;">
-          <div class="narasi-box">
-            <h4>Bagian Materi yang Sudah Dikuasai</h4>
-            <p id="cbtResDikuasai">-</p>
-          </div>
-          <div class="narasi-box accent-border">
-            <h4>Bagian Materi yang Masih Butuh Perbaikan</h4>
-            <p id="cbtResPerbaikan">-</p>
+          <p style="font-size:13px; color:var(--text-muted);">
+            Unduh halaman hasil latihan beserta pembahasan lengkap ini dalam format <strong>PDF</strong>, lalu kirimkan ke orang tua atau guru melalui <strong>WhatsApp</strong> atau <strong>Email</strong>.
+          </p>
+          <div class="cbt-bottom-share-actions">
+            <button type="button" id="btnDownloadCbtPdf" class="btn btn-primary" onclick="downloadCbtResultPdf()">
+              Unduh PDF Hasil &amp; Pembahasan
+            </button>
+            <a id="btnBottomShareWa" href="#" target="_blank" rel="noopener" class="btn btn-primary" style="background:#15803D;" onclick="handleSharePdfAction('wa')">
+              Kirim via WhatsApp
+            </a>
+            <a id="btnBottomShareEmail" href="#" class="btn btn-outline" onclick="handleSharePdfAction('email')">
+              Kirim via Email
+            </a>
+            <button type="button" class="btn btn-outline" onclick="kembaliKeLobbyCBT()">
+              Latihan Paket Lain
+            </button>
           </div>
         </div>
-
-        <div id="cbtReviewList" style="display:flex; flex-direction:column; gap:14px;"></div>
       </div>
     </section>
 
@@ -1716,7 +1778,7 @@
           Hasil latihan berhasil tercatat di database sekolah.
         </div>
         <p style="font-size:13.5px; color:var(--text-muted); margin-bottom:16px;">
-          Silakan pilih saluran di bawah ini untuk mengirimkan ringkasan hasil latihan dan analisis materi ke orang tua atau guru:
+          Silakan pilih saluran di bawah ini untuk mengirimkan ringkasan hasil latihan, atau tutup jendela ini untuk melihat pembahasan lengkap &amp; mengunduh PDF di bagian bawah halaman:
         </p>
         <div style="display:flex; flex-direction:column; gap:10px;">
           <a id="btnShareWa" href="#" target="_blank" rel="noopener" class="btn btn-primary" style="width:100%; background:#15803D;">
@@ -1726,7 +1788,7 @@
             Kirim Laporan via Aplikasi Email
           </a>
           <button type="button" class="btn btn-outline" style="width:100%;" onclick="closeCbtShareModal()">
-            Lihat Pembahasan &amp; Analisis di Halaman Ini
+            Lihat Pembahasan &amp; Unduh PDF di Halaman Ini
           </button>
         </div>
       </div>
@@ -1760,12 +1822,41 @@
   <footer>
     <div class="footer-inner">
       <div>
-        <strong>SMP Al-Irsyad Surabaya</strong> — Sistem Informasi Monitoring Try Out &amp; TKA Terpadu
+        <strong>SMP Al-Irsyad Surabaya</strong> — Sekolah Islam dengan Pendidikan Holistik Qur'ani
       </div>
     </div>
   </footer>
 
   <script>
+    /* =====================================================================
+       DETEKSI OTOMATIS BERKAS LOGO YPAS (MENDUKUNG BERBAGAI NAMA / FOLDER)
+       ===================================================================== */
+    const YPAS_LOGO_CANDIDATES = [
+      'logo-ypas.png',
+      'logo_ypas.png',
+      'logo.png',
+      'Logo-YPAS.png',
+      'assets/logo-ypas.png',
+      'assets/logo_ypas.png',
+      'assets/logo.png',
+      'img/logo-ypas.png',
+      'images/logo-ypas.png',
+      'logo-ypas.jpg',
+      'logo.jpg'
+    ];
+    let ypasLogoTryIdx = 0;
+
+    function tryNextYpasLogo(imgEl) {
+      ypasLogoTryIdx++;
+      if (ypasLogoTryIdx < YPAS_LOGO_CANDIDATES.length) {
+        imgEl.src = YPAS_LOGO_CANDIDATES[ypasLogoTryIdx];
+      } else {
+        imgEl.style.display = 'none';
+        const fb = document.getElementById('ypasLogoFallback');
+        if (fb) fb.style.display = 'inline';
+      }
+    }
+
     /* =====================================================================
        KONFIGURASI ENDPOINT API GOOGLE APPS SCRIPT
        ===================================================================== */
@@ -1784,6 +1875,7 @@
       cbtPaketList: [],
       cbtStudent: null,
       cbtActivePaket: null,
+      cbtLastResultMeta: null,
       cbtCurrentIdx: 0,
       cbtAnswers: {},
       cbtViolations: 0,
@@ -1852,7 +1944,6 @@
       const cacheKey = `tka_portal_init_${requestedPeriode || 'default'}`;
       let hasLocalCache = false;
 
-      // 1. Tampilkan seketika (<0,1 detik) jika HP sudah pernah menyimpan data sebelumnya
       try {
         const rawCache = localStorage.getItem(cacheKey);
         if (rawCache) {
@@ -1864,14 +1955,12 @@
         }
       } catch (e) {}
 
-      // Jika belum pernah dibuka sama sekali di HP ini, tampilkan langsung kerangka Beranda
       if (!hasLocalCache) {
         document.getElementById('tab-beranda').classList.add('active');
         loaderText.textContent = 'Memuat data statistik dan jadwal terbaru...';
         loader.style.display = 'flex';
       }
 
-      // 2. Ambil data terbaru di latar belakang (Silent Background Refresh)
       try {
         const url = requestedPeriode
           ? `${API_URL}?action=init&periode=${encodeURIComponent(requestedPeriode)}`
@@ -1892,7 +1981,6 @@
           localStorage.setItem(cacheKey, JSON.stringify(data));
         } catch (e) {}
 
-        // Unduh paket soal CBT diam-diam di latar belakang agar langsung siap saat diklik
         prefetchPaketLatihan();
 
         const savedSession = sessionStorage.getItem('tka_siswa_auth');
@@ -2030,7 +2118,6 @@
       document.getElementById('legendTrenKurikulum').textContent =
         `Rata-rata seluruh siswa kelas IX (${mapelShort[mapelKey]})`;
 
-      // 1. Render Horizontal Bars Per Rombel
       const perRombelMapel = grafik.per_rombel_mapel || {};
       const fallbackRombel = grafik.per_rombel || {};
       const activeRombelObj = perRombelMapel[mapelKey] || fallbackRombel;
@@ -2068,7 +2155,6 @@
 
       barsContainer.innerHTML = barsHtml;
 
-      // 2. Render Line Chart Tren Hasil Seluruh Periode TO
       const trendSeries = mapelKey === 'literasi'
         ? (grafik.literasi_angkatan || [])
         : (mapelKey === 'numerasi' ? (grafik.numerasi_angkatan || []) : (grafik.gabungan_angkatan || []));
@@ -2810,7 +2896,6 @@
         };
       }
 
-      // Default: PG Tunggal
       const usr = typeof userAns === 'string' ? userAns.trim().toUpperCase() : '';
       const isCorrect = usr !== '' && usr === rawKunci;
       return {
@@ -3262,6 +3347,58 @@
       document.getElementById('cbtShareModal').classList.remove('open');
     }
 
+    function downloadCbtResultPdf(silentMode = false) {
+      const element = document.getElementById('cbtPrintableArea');
+      const meta = appState.cbtLastResultMeta || { nama: 'Siswa', nis: '000', judul: 'Latihan_TKA' };
+      const safeNama = meta.nama.replace(/[^a-zA-Z0-9_-]/g, '_');
+      const safeJudul = meta.judul.replace(/[^a-zA-Z0-9_-]/g, '_');
+      const fileName = `Hasil_Pembahasan_${safeNama}_${meta.nis}_${safeJudul}.pdf`;
+
+      if (typeof html2pdf !== 'undefined') {
+        const btn = document.getElementById('btnDownloadCbtPdf');
+        const origText = btn ? btn.textContent : '';
+        if (btn && !silentMode) {
+          btn.disabled = true;
+          btn.textContent = 'Menyiapkan Berkas PDF...';
+        }
+
+        const opt = {
+          margin:       [10, 10, 10, 10],
+          filename:     fileName,
+          image:        { type: 'jpeg', quality: 0.96 },
+          html2canvas:  { scale: 2, useCORS: true, logging: false },
+          jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
+          pagebreak:    { mode: ['avoid-all', 'css', 'legacy'] }
+        };
+
+        html2pdf().set(opt).from(element).save().then(() => {
+          if (btn && !silentMode) {
+            btn.disabled = false;
+            btn.textContent = origText;
+          }
+        }).catch(() => {
+          if (btn && !silentMode) {
+            btn.disabled = false;
+            btn.textContent = origText;
+          }
+          window.print();
+        });
+      } else {
+        window.print();
+      }
+    }
+
+    function handleSharePdfAction(channel) {
+      downloadCbtResultPdf(true);
+      setTimeout(() => {
+        alert(
+          channel === 'wa'
+            ? 'Berkas PDF Hasil & Pembahasan sedang diunduh ke perangkat Anda. Silakan lampirkan file PDF tersebut pada pesan WhatsApp yang terbuka.'
+            : 'Berkas PDF Hasil & Pembahasan sedang diunduh ke perangkat Anda. Silakan lampirkan file PDF tersebut pada aplikasi Email yang terbuka.'
+        );
+      }, 400);
+    }
+
     function selesaiUjianCBT(isTimeUp) {
       const paket = appState.cbtActivePaket;
       if (!paket) return;
@@ -3321,6 +3458,12 @@
       const skor = total > 0 ? Math.round((benar / total) * 100) : 0;
       const predikat = skor >= 80 ? 'Sangat Baik' : (skor >= 65 ? 'Tuntas Target' : 'Perlu Penguatan');
 
+      appState.cbtLastResultMeta = {
+        nama: student.nama,
+        nis: student.nis,
+        judul: paket.judul || 'Latihan_TKA'
+      };
+
       document.getElementById('cbtExamWrapper').style.display = 'none';
       document.getElementById('cbtResultWrapper').style.display = 'block';
 
@@ -3379,6 +3522,7 @@
       const pesanLaporan = [
         `*LAPORAN HASIL LATIHAN MANDIRI TKA*`,
         `SMP Al-Irsyad Surabaya`,
+        `Sekolah Islam dengan Pendidikan Holistik Qur'ani`,
         ``,
         `Nama Siswa : ${student.nama}`,
         `NIS : ${student.nis}`,
@@ -3392,15 +3536,23 @@
         `${teksDikuasai}`,
         ``,
         `*Materi Perlu Perbaikan:*`,
-        `${teksPerbaikan}`
+        `${teksPerbaikan}`,
+        ``,
+        `_(Terlampir berkas PDF Hasil & Pembahasan Lengkap)_`
       ].join('\n');
 
-      const subjectEmail = encodeURIComponent(`Laporan Latihan TKA - ${student.nama} (${student.nis}) - ${paket.judul}`);
+      const subjectEmail = encodeURIComponent(`Laporan Hasil & Pembahasan TKA - ${student.nama} (${student.nis}) - ${paket.judul}`);
       const bodyEmail = encodeURIComponent(pesanLaporan.replace(/\*/g, ''));
       const textWa = encodeURIComponent(pesanLaporan);
 
-      document.getElementById('btnShareWa').href = `https://wa.me/?text=${textWa}`;
-      document.getElementById('btnShareEmail').href = `mailto:?subject=${subjectEmail}&body=${bodyEmail}`;
+      const waHref = `https://wa.me/?text=${textWa}`;
+      const mailHref = `mailto:?subject=${subjectEmail}&body=${bodyEmail}`;
+
+      document.getElementById('btnShareWa').href = waHref;
+      document.getElementById('btnShareEmail').href = mailHref;
+      document.getElementById('btnBottomShareWa').href = waHref;
+      document.getElementById('btnBottomShareEmail').href = mailHref;
+
       document.getElementById('cbtShareSummaryText').innerHTML =
         `<strong>${escapeHtml(student.nama)}</strong> (NIS: ${escapeHtml(student.nis)}) — Skor: <strong>${skor}</strong> (${predikat}). Data otomatis tersimpan ke rekap guru.`;
       document.getElementById('cbtShareModal').classList.add('open');
