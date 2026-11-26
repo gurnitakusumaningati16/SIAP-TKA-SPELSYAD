@@ -1689,30 +1689,29 @@
           <div id="cbtReviewList" style="display:flex; flex-direction:column; gap:14px;"></div>
         </div>
 
-        <!-- PANEL UNDUH PDF & KIRIM VIA EMAIL / WHATSAPP DI BAGIAN PALING BAWAH -->
+        <!-- PANEL DOWNLOAD PDF HASIL PEMBAHASAN & ANALISIS DI BAGIAN PALING BAWAH -->
         <div class="cbt-bottom-share-card no-print" data-html2canvas-ignore="true">
-          <div style="font-size:16px; font-weight:800; color:var(--primary-dark); margin-bottom:4px;">
-            Simpan &amp; Kirim Dokumen PDF Hasil Latihan + Pembahasan
+          <div style="font-size:17px; font-weight:800; color:var(--primary-dark); margin-bottom:6px;">
+            Simpan Bahan Belajar: Download PDF Hasil Pembahasan &amp; Analisis Hasil TO
           </div>
-          <p style="font-size:13px; color:var(--text-muted);">
-            Unduh halaman hasil latihan beserta pembahasan lengkap ini dalam format <strong>PDF</strong>, lalu kirimkan ke orang tua atau guru melalui <strong>WhatsApp</strong> atau <strong>Email</strong>.
+          <p style="font-size:13.5px; color:var(--text-muted);">
+            Unduh dokumen lengkap berisi <strong>Skor Akhir, Analisis Penguasaan Materi, Kunci Jawaban, serta Pembahasan Setiap Soal</strong> dalam format PDF untuk bahan belajar mandiri di rumah.
           </p>
           <div class="cbt-bottom-share-actions">
-            <button type="button" id="btnDownloadCbtPdf" class="btn btn-primary" onclick="downloadCbtResultPdf()">
-              Unduh PDF Hasil &amp; Pembahasan
+            <button type="button" id="btnDownloadCbtPdf" class="btn btn-primary" style="padding:12px 22px; font-size:14.5px;" onclick="downloadCbtResultPdf()">
+              Download PDF Hasil Pembahasan &amp; Analisis TO
             </button>
-            <a id="btnBottomShareWa" href="#" target="_blank" rel="noopener" class="btn btn-primary" style="background:#15803D;" onclick="handleSharePdfAction('wa')">
+            <a id="btnBottomShareWa" href="#" target="_blank" rel="noopener" class="btn btn-outline" style="border-color:#15803D; color:#15803D;" onclick="handleSharePdfAction('wa')">
               Kirim via WhatsApp
             </a>
             <a id="btnBottomShareEmail" href="#" class="btn btn-outline" onclick="handleSharePdfAction('email')">
               Kirim via Email
             </a>
             <button type="button" class="btn btn-outline" onclick="kembaliKeLobbyCBT()">
-              Latihan Paket Lain
+              Kerjakan Paket Lain
             </button>
           </div>
         </div>
-      </div>
     </section>
 
   </main>
@@ -1808,10 +1807,15 @@
         <p style="font-size: 13.5px; color: var(--text-muted); margin-bottom: 14px;">
           Selama simulasi CBT berlangsung, siswa dilarang berpindah tab, membuka aplikasi lain, atau keluar dari mode layar penuh.
         </p>
-        <div class="alert alert-danger" style="font-weight: 700; margin-bottom: 18px;" id="cbtViolationCounterText">
-          Pelanggaran ke-1 dari maksimal 3 kali. Jika mencapai 3 kali, ujian otomatis dikumpulkan!
+        <div class="alert alert-danger" style="font-weight: 700; margin-bottom: 14px;" id="cbtViolationCounterText">
+          Pelanggaran ke-1. Jika melebihi 3 kali, akses soal dikunci selama 5 menit setiap pelanggaran berikutnya!
         </div>
-        <button type="button" class="btn btn-primary" style="width: 100%;" onclick="resumeFromViolation()">
+        <div id="cbtPenaltyTimerBox" style="display:none; background:#FEF2F2; border:1.5px solid #FCA5A5; border-radius:10px; padding:12px; margin-bottom:16px;">
+          <div style="font-size:12px; font-weight:700; color:#991B1B; text-transform:uppercase;">Sanksi Penangguhan Pengerjaan</div>
+          <div id="cbtPenaltyCountdown" style="font-size:26px; font-weight:800; color:#DC2626; margin:4px 0;">05:00</div>
+          <div style="font-size:12px; color:#7F1D1D;">Tombol lanjut akan aktif otomatis setelah waktu penalti selesai.</div>
+        </div>
+        <button type="button" id="btnResumeViolation" class="btn btn-primary" style="width: 100%;" onclick="resumeFromViolation()">
           Kembali ke Layar Penuh &amp; Lanjutkan Ujian
         </button>
       </div>
@@ -2726,66 +2730,90 @@
        ===================================================================== */
     const CBT_SESSION_STORAGE_KEY = 'tka_active_cbt_session_v1';
     const MAX_CBT_VIOLATIONS = 3;
+    const PENALTY_DURATION_MS = 5 * 60 * 1000; // 5 menit
     let pendingPaketIndex = null;
     let isExamLockActive = false;
     let violationCooldown = false;
-
-    function enterFullscreenSafe() {
-      const el = document.documentElement;
-      if (el.requestFullscreen) {
-        el.requestFullscreen().catch(() => {});
-      } else if (el.webkitRequestFullscreen) {
-        el.webkitRequestFullscreen();
-      }
-    }
-
-    function exitFullscreenSafe() {
-      if (document.fullscreenElement && document.exitFullscreen) {
-        document.exitFullscreen().catch(() => {});
-      } else if (document.webkitFullscreenElement && document.webkitExitFullscreen) {
-        document.webkitExitFullscreen();
-      }
-    }
-
-    function enableExamLock() {
-      isExamLockActive = true;
-      document.body.classList.add('exam-lock-mode');
-      enterFullscreenSafe();
-    }
-
-    function disableExamLock() {
-      isExamLockActive = false;
-      document.body.classList.remove('exam-lock-mode');
-      document.getElementById('cbtViolationModal').classList.remove('open');
-      exitFullscreenSafe();
-    }
+    let penaltyInterval = null;
 
     function triggerExamViolation(reasonText) {
       if (!isExamLockActive || !appState.cbtActivePaket || violationCooldown) return;
+
+      // Jika sedang dalam masa hukuman 5 menit, jangan tambah hitungan pelanggaran baru
+      if (appState.cbtPenaltyUntil && Date.now() < appState.cbtPenaltyUntil) {
+        showViolationModal(reasonText, true);
+        return;
+      }
 
       violationCooldown = true;
       setTimeout(() => { violationCooldown = false; }, 1500);
 
       appState.cbtViolations = (appState.cbtViolations || 0) + 1;
-      saveCbtSessionState();
+      const isOverLimit = appState.cbtViolations > MAX_CBT_VIOLATIONS;
 
-      if (appState.cbtViolations >= MAX_CBT_VIOLATIONS) {
-        alert(
-          `BATAS PELANGGARAN TERCAPAI (${appState.cbtViolations}/${MAX_CBT_VIOLATIONS})!\n\n` +
-          `Alasan terakhir: ${reasonText}\n` +
-          `Sistem otomatis mengakhiri dan mengumpulkan jawaban Anda sekarang.`
-        );
-        selesaiUjianCBT(true);
-        return;
+      if (isOverLimit) {
+        appState.cbtPenaltyUntil = Date.now() + PENALTY_DURATION_MS;
       }
 
+      saveCbtSessionState();
+      showViolationModal(reasonText, isOverLimit);
+    }
+
+    function showViolationModal(reasonText, isLocked) {
       document.getElementById('cbtViolationReason').textContent = reasonText;
-      document.getElementById('cbtViolationCounterText').textContent =
-        `Pelanggaran ke-${appState.cbtViolations} dari maksimal ${MAX_CBT_VIOLATIONS} kali. Jika mencapai ${MAX_CBT_VIOLATIONS} kali, ujian otomatis dikumpulkan!`;
+      const counterEl = document.getElementById('cbtViolationCounterText');
+      const penaltyBox = document.getElementById('cbtPenaltyTimerBox');
+      const btnResume = document.getElementById('btnResumeViolation');
+
+      if (isLocked) {
+        counterEl.textContent =
+          `Pelanggaran ke-${appState.cbtViolations} (melebihi batas toleransi ${MAX_CBT_VIOLATIONS} kali). Anda tidak dapat mengerjakan soal selama 5 menit!`;
+        penaltyBox.style.display = 'block';
+        btnResume.disabled = true;
+        btnResume.textContent = 'Terkunci Selama Masa Sanksi...';
+        startPenaltyCountdown();
+      } else {
+        const sisaToleransi = MAX_CBT_VIOLATIONS - appState.cbtViolations;
+        counterEl.textContent =
+          `Pelanggaran ke-${appState.cbtViolations} dari ${MAX_CBT_VIOLATIONS} batas toleransi (sisa toleransi: ${sisaToleransi} kali). Jika melebihi 3 kali, soal akan dikunci 5 menit setiap pelanggaran berikutnya.`;
+        penaltyBox.style.display = 'none';
+        btnResume.disabled = false;
+        btnResume.textContent = 'Kembali ke Layar Penuh & Lanjutkan Ujian';
+      }
+
       document.getElementById('cbtViolationModal').classList.add('open');
     }
 
+    function startPenaltyCountdown() {
+      if (penaltyInterval) clearInterval(penaltyInterval);
+
+      const updatePenaltyTick = () => {
+        const sisaMs = (appState.cbtPenaltyUntil || 0) - Date.now();
+        if (sisaMs <= 0) {
+          clearInterval(penaltyInterval);
+          appState.cbtPenaltyUntil = 0;
+          saveCbtSessionState();
+
+          document.getElementById('cbtPenaltyCountdown').textContent = '00:00';
+          const btnResume = document.getElementById('btnResumeViolation');
+          btnResume.disabled = false;
+          btnResume.textContent = 'Masa Sanksi Selesai — Lanjutkan Ujian';
+          return;
+        }
+
+        const totalDetik = Math.ceil(sisaMs / 1000);
+        const m = Math.floor(totalDetik / 60);
+        const s = totalDetik % 60;
+        document.getElementById('cbtPenaltyCountdown').textContent =
+          `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+      };
+
+      updatePenaltyTick();
+      penaltyInterval = setInterval(updatePenaltyTick, 1000);
+    }
+
     function resumeFromViolation() {
+      if (appState.cbtPenaltyUntil && Date.now() < appState.cbtPenaltyUntil) return;
       document.getElementById('cbtViolationModal').classList.remove('open');
       enterFullscreenSafe();
     }
@@ -2947,6 +2975,10 @@
         appState.cbtCurrentIdx = saved.currentIdx || 0;
         appState.cbtAnswers = saved.answers || {};
         appState.cbtViolations = saved.violations || 0;
+        appState.cbtPenaltyUntil = saved.penaltyUntil || 0;
+        if (appState.cbtPenaltyUntil > Date.now()) {
+          showViolationModal('Sanksi penangguhan pengerjaan masih berlangsung.', true);
+        }
         appState.cbtStartTimestamp = saved.startTimestamp || Date.now();
         appState.cbtEndTimestamp = saved.endTimestamp;
         appState.cbtSecondsLeft = remainingSecs;
