@@ -121,6 +121,13 @@
       color: #CBE5DD;
     }
 
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
     .periode-box {
       display: flex;
       align-items: center;
@@ -148,6 +155,19 @@
       font-weight: 700;
       cursor: pointer;
       outline: none;
+    }
+
+    .user-session-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(252, 211, 77, 0.18);
+      border: 1px solid rgba(252, 211, 77, 0.4);
+      color: #FEF3C7;
+      padding: 6px 12px;
+      border-radius: 10px;
+      font-size: 12.5px;
+      font-weight: 700;
     }
 
     /* NAVIGATION TABS */
@@ -827,7 +847,7 @@
       box-shadow: var(--shadow);
     }
 
-    /* PDF PREVIEW MODAL */
+    /* MODAL */
     .modal-backdrop {
       display: none;
       position: fixed;
@@ -841,6 +861,69 @@
 
     .modal-backdrop.open {
       display: flex;
+    }
+
+    /* GATEKEEPER LOGIN MODAL (GERBANG UTAMA) */
+    .gatekeeper-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(7, 54, 41, 0.88);
+      backdrop-filter: blur(8px);
+      z-index: 1500;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      overflow-y: auto;
+    }
+
+    .gatekeeper-backdrop.open {
+      display: flex;
+    }
+
+    .gatekeeper-box {
+      background: #FFFFFF;
+      width: 100%;
+      max-width: 460px;
+      border-radius: 18px;
+      overflow: hidden;
+      box-shadow: 0 25px 60px -12px rgba(0, 0, 0, 0.45);
+      border: 1px solid var(--primary-border);
+    }
+
+    .gatekeeper-header {
+      background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+      color: #FFFFFF;
+      padding: 22px 24px;
+      text-align: center;
+    }
+
+    .gatekeeper-tabs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      background: #F1F5F9;
+      padding: 4px;
+      border-radius: 10px;
+      margin-bottom: 18px;
+    }
+
+    .gk-tab-btn {
+      border: none;
+      background: transparent;
+      padding: 9px 10px;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.18s;
+    }
+
+    .gk-tab-btn.active {
+      background: #FFFFFF;
+      color: var(--primary-dark);
+      box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08);
     }
 
     .modal-box {
@@ -1181,7 +1264,7 @@
     }
 
     @media print {
-      .topbar, .nav-bar, .no-print, footer, .modal-backdrop, .cbt-bottom-share-card {
+      .topbar, .nav-bar, .no-print, footer, .modal-backdrop, .gatekeeper-backdrop, .cbt-bottom-share-card {
         display: none !important;
       }
       .container {
@@ -1197,6 +1280,72 @@
 </head>
 <body>
 
+  <!-- =====================================================================
+       GERBANG LOGIN WAJIB (SISWA / WALI MURID VIA NISN & GURU VIA PASSCODE)
+       ===================================================================== -->
+  <div id="gatekeeperModal" class="gatekeeper-backdrop">
+    <div class="gatekeeper-box">
+      <div class="gatekeeper-header">
+        <div style="width:54px; height:54px; border-radius:14px; background:#FFFFFF; margin:0 auto 10px; padding:5px; display:flex; align-items:center; justify-content:center;">
+          <img src="logo-spelsyad.png" alt="Logo YPAS" style="width:100%; height:100%; object-fit:contain;" onerror="this.style.display='none'" />
+        </div>
+        <h2 style="font-size:18px; font-weight:800; line-height:1.3;">Portal TKA &amp; Monitoring Try Out</h2>
+        <p style="font-size:12.5px; color:#CBE5DD; margin-top:2px;">SMP Al-Irsyad Surabaya — Akses Terbatas Internal</p>
+      </div>
+
+      <div style="padding:22px 24px;">
+        <div class="gatekeeper-tabs">
+          <button type="button" id="gkTabSiswa" class="gk-tab-btn active" onclick="switchGatekeeperMode('siswa')">
+            Siswa / Wali Murid
+          </button>
+          <button type="button" id="gkTabGuru" class="gk-tab-btn" onclick="switchGatekeeperMode('guru')">
+            Guru / Tim Kurikulum
+          </button>
+        </div>
+
+        <div id="gkError" class="alert alert-danger" style="display:none; font-size:13px;"></div>
+
+        <!-- FORM MASUK SISWA / WALI MURID -->
+        <form id="gkFormSiswa" onsubmit="handleGatekeeperLogin(event, 'siswa')">
+          <div class="form-group">
+            <label for="gkInputNisn">Masukkan NISN Siswa (10 Digit)</label>
+            <input type="text" id="gkInputNisn" class="form-control" inputmode="numeric" maxlength="10" placeholder="Contoh: 0101234567" required />
+          </div>
+          <button type="submit" id="btnGkSiswa" class="btn btn-primary" style="width:100%; padding:12px;">
+            Masuk ke Portal Siswa
+          </button>
+
+          <div style="margin-top:14px; text-align:center;">
+            <button type="button" onclick="toggleLupaNisnInfo()" style="background:none; border:none; color:var(--primary); font-family:inherit; font-size:12.5px; font-weight:700; cursor:pointer; text-decoration:underline;">
+              Lupa atau tidak tahu NISN Ananda?
+            </button>
+            <div id="lupaNisnBox" style="display:none; margin-top:10px; background:#F8FAFC; border:1px solid var(--border); border-radius:10px; padding:12px; text-align:left; font-size:12.5px; color:var(--text-muted);">
+              <strong>Cara Mengecek NISN:</strong>
+              <ul style="margin:6px 0 0 18px; line-height:1.5;">
+                <li>Periksa pada <strong>Kartu Pelajar SMP Al-Irsyad</strong> atau halaman identitas <strong>Rapor Semester</strong>.</li>
+                <li>Atau hubungi <strong>Wali Kelas / Admin Kurikulum</strong> untuk konfirmasi 10 digit NISN Ananda.</li>
+              </ul>
+            </div>
+          </div>
+        </form>
+
+        <!-- FORM MASUK GURU / TIM KURIKULUM -->
+        <form id="gkFormGuru" style="display:none;" onsubmit="handleGatekeeperLogin(event, 'guru')">
+          <div class="form-group">
+            <label for="gkInputPasscode">Passcode Akses Guru</label>
+            <input type="password" id="gkInputPasscode" class="form-control" placeholder="Masukkan passcode guru..." required />
+          </div>
+          <button type="submit" id="btnGkGuru" class="btn btn-primary" style="width:100%; padding:12px;">
+            Masuk sebagai Guru / Kurikulum
+          </button>
+          <p style="font-size:12px; color:var(--text-soft); margin-top:10px; text-align:center;">
+            Akses penuh seluruh grafik angkatan, kisi-kisi, bank soal, dan pratinjau CBT.
+          </p>
+        </form>
+      </div>
+    </div>
+  </div>
+
   <!-- TOPBAR -->
   <header class="topbar">
     <div class="topbar-inner">
@@ -1211,11 +1360,20 @@
         </div>
       </div>
 
-      <div class="periode-box">
-        <label for="selectPeriode">Tahun Pelajaran:</label>
-        <select id="selectPeriode" onchange="onChangePeriode()">
-          <option value="2026-27">2026/2027</option>
-        </select>
+      <div class="topbar-right">
+        <div id="activeUserPill" class="user-session-badge" style="display:none;">
+          <span id="activeUserLabel">-</span>
+          <button type="button" onclick="logoutPortal()" style="background:rgba(255,255,255,0.2); border:none; color:#FFFFFF; border-radius:6px; padding:2px 8px; font-size:11px; font-weight:700; cursor:pointer;">
+            Keluar
+          </button>
+        </div>
+
+        <div class="periode-box">
+          <label for="selectPeriode">Tahun Pelajaran:</label>
+          <select id="selectPeriode" onchange="onChangePeriode()">
+            <option value="2026-27">2026/2027</option>
+          </select>
+        </div>
       </div>
     </div>
   </header>
@@ -1323,9 +1481,7 @@
         </div>
       </div>
 
-      <!-- ============================================================
-           BAGIAN DASHBOARD KURIKULUM: FILTER PERIODE TO & MATA PELAJARAN
-           ============================================================ -->
+      <!-- DASHBOARD KURIKULUM: FILTER PERIODE TO & MATA PELAJARAN -->
       <div class="kurikulum-filter-grid">
         <div class="kurikulum-select-group">
           <label for="filterPeriodeTO">Pilih periode TO</label>
@@ -1345,7 +1501,7 @@
         Memuat ringkasan periode Try Out...
       </div>
 
-      <!-- KARTU 1: RATA-RATA NILAI PER ROMBEL (HORIZONTAL PROGRESS BAR) -->
+      <!-- KARTU 1: RATA-RATA NILAI PER ROMBEL -->
       <div class="card">
         <div class="card-header">
           <div>
@@ -1369,7 +1525,7 @@
         <div id="rombelHorizontalBars" class="rombel-bar-list"></div>
       </div>
 
-      <!-- KARTU 2: TREN HASIL SELURUH PERIODE TO (DENGAN ANGKA DI ATAS TITIK) -->
+      <!-- KARTU 2: TREN HASIL SELURUH PERIODE TO -->
       <div class="card">
         <div class="card-header">
           <div>
@@ -1434,7 +1590,7 @@
          TAB 2: CEK LAPORAN SISWA (WALI MURID)
          ============================================================ -->
     <section id="tab-laporan" class="tab-panel">
-      <!-- FORM LOGIN NIS + NISN -->
+      <!-- FORM LOGIN NIS + NISN (KHUSUS JIKA MASUK SEBAGAI GURU) -->
       <div id="loginSiswaWrapper" class="card login-box">
         <div class="card-header">
           <div>
@@ -1476,7 +1632,7 @@
 
           <div style="display:flex; gap:8px; flex-wrap:wrap;" class="no-print">
             <button class="btn btn-outline btn-sm" onclick="window.print()">Cetak Halaman</button>
-            <button class="btn btn-ghost-light btn-sm" onclick="logoutSiswa()">Cek Siswa Lain</button>
+            <button id="btnCekSiswaLain" class="btn btn-ghost-light btn-sm" onclick="logoutSiswa()">Cek Siswa Lain</button>
           </div>
         </div>
 
@@ -1611,6 +1767,19 @@
         <p>Memuat paket latihan soal CBT...</p>
       </div>
 
+      <!-- BANNER AKSES ULANG HASIL CBT TERAKHIR (JIKA TERLUPA / TERTUTUP) -->
+      <div id="cbtSavedHistoryBanner" class="card" style="display:none; background:#F0FDF4; border-color:var(--primary-border);">
+        <div class="card-header" style="margin-bottom:0;">
+          <div>
+            <div class="card-title" style="font-size:15.5px; color:var(--primary-dark);">Riwayat Hasil &amp; Pembahasan Latihan Tersimpan</div>
+            <div class="card-subtitle" id="cbtSavedHistoryDesc">Anda memiliki hasil latihan CBT yang tersimpan di perangkat ini.</div>
+          </div>
+          <button type="button" class="btn btn-primary btn-sm" onclick="bukaKembaliHasilCbtTersimpan()">
+            Buka Hasil &amp; Download PDF Pembahasan
+          </button>
+        </div>
+      </div>
+
       <!-- DAFTAR PAKET CBT -->
       <div id="cbtLobbyWrapper" class="card">
         <div class="card-header">
@@ -1712,7 +1881,7 @@
             </button>
           </div>
         </div>
-        </div>
+      </div>
     </section>
 
   </main>
@@ -1739,12 +1908,12 @@
   <div id="cbtStartModal" class="modal-backdrop">
     <div class="modal-box" style="max-width:460px; height:auto;">
       <div class="modal-header">
-        <div class="modal-title">Identitas Peserta Latihan CBT</div>
+        <div class="modal-title">Konfirmasi Peserta Latihan CBT</div>
         <button type="button" class="btn btn-ghost-light btn-sm" onclick="closeCbtStartModal()">Batal</button>
       </div>
       <div style="padding:22px; background:#FFFFFF;">
         <p id="cbtStartPaketInfo" style="font-size:13.5px; color:var(--text-muted); margin-bottom:14px;">
-          Masukkan Nama Lengkap dan NIS sebelum memulai latihan mandiri.
+          Pastikan identitas peserta sudah sesuai sebelum memulai latihan mandiri.
         </p>
         <div class="alert alert-warning" style="font-size:12.5px; margin-bottom:14px;">
           <strong>Perhatian:</strong> Ujian akan dibuka dalam mode layar penuh (Exam Lock). Dilarang berpindah tab atau membuka aplikasi lain selama mengerjakan (maksimal toleransi 3 kali pelanggaran).
@@ -1834,7 +2003,7 @@
 
   <script>
     /* =====================================================================
-       DETEKSI OTOMATIS BERKAS LOGO YPAS (MENDUKUNG BERBAGAI NAMA / FOLDER)
+       DETEKSI OTOMATIS BERKAS LOGO YPAS
        ===================================================================== */
     const YPAS_LOGO_CANDIDATES = [
       'logo-spelsyad.png',
@@ -1863,12 +2032,15 @@
     }
 
     /* =====================================================================
-       KONFIGURASI ENDPOINT API GOOGLE APPS SCRIPT
+       KONFIGURASI ENDPOINT API GOOGLE APPS SCRIPT & STATE UTAMA
        ===================================================================== */
     const API_URL = 'https://script.google.com/macros/s/AKfycbyBgboAaV6XmiUCjqAEmoem0KDqtouMv46S3uHbdrw-9TKLcU395dKBz4RnsitbZbUmXg/exec';
+    const PORTAL_AUTH_STORAGE_KEY = 'tka_portal_user_session_v1';
+    const CBT_LAST_RESULT_STORAGE_KEY = 'tka_cbt_last_result_v1';
 
     let appState = {
       periode: '',
+      portalUser: null, // { role: 'siswa' | 'guru', siswa?: { nis, nisn, nama, rombel }, nama?: string }
       initData: null,
       chartTrenKurikulum: null,
       chartAngkatan: null,
@@ -1884,13 +2056,13 @@
       cbtCurrentIdx: 0,
       cbtAnswers: {},
       cbtViolations: 0,
+      cbtPenaltyUntil: 0,
       cbtStartTimestamp: 0,
       cbtEndTimestamp: 0,
       cbtTimerInterval: null,
       cbtSecondsLeft: 0
     };
 
-    /* Plugin Chart.js untuk menampilkan angka nilai tepat di atas setiap titik garis */
     const pointValueLabelPlugin = {
       id: 'pointValueLabelPlugin',
       afterDatasetsDraw(chart) {
@@ -1916,16 +2088,149 @@
     };
 
     /* =====================================================================
-       INISIALISASI HALAMAN
+       INISIALISASI HALAMAN & GATEKEEPER LOGIN AWAL
        ===================================================================== */
     document.addEventListener('DOMContentLoaded', () => {
+      checkPortalGatekeeper();
       loadInitData('');
-      setTimeout(() => { restoreCbtSessionIfActive(); }, 100);
+      setTimeout(() => {
+        restoreCbtSessionIfActive();
+        checkSavedCbtHistoryBanner();
+      }, 120);
+
       document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape' && !isExamLockActive) closeDocModal();
       });
     });
 
+    function checkPortalGatekeeper() {
+      try {
+        const raw = localStorage.getItem(PORTAL_AUTH_STORAGE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed && (parsed.role === 'guru' || (parsed.role === 'siswa' && parsed.siswa && parsed.siswa.nisn))) {
+            applyPortalUserSession(parsed, false);
+            return;
+          }
+        }
+      } catch (e) {}
+
+      // Jika belum login, tampilkan gerbang masuk wajib
+      document.getElementById('gatekeeperModal').classList.add('open');
+      setTimeout(() => document.getElementById('gkInputNisn').focus(), 100);
+    }
+
+    function switchGatekeeperMode(mode) {
+      document.getElementById('gkError').style.display = 'none';
+      const isSiswa = mode === 'siswa';
+      document.getElementById('gkTabSiswa').classList.toggle('active', isSiswa);
+      document.getElementById('gkTabGuru').classList.toggle('active', !isSiswa);
+      document.getElementById('gkFormSiswa').style.display = isSiswa ? 'block' : 'none';
+      document.getElementById('gkFormGuru').style.display = isSiswa ? 'none' : 'block';
+
+      if (isSiswa) document.getElementById('gkInputNisn').focus();
+      else document.getElementById('gkInputPasscode').focus();
+    }
+
+    function toggleLupaNisnInfo() {
+      const box = document.getElementById('lupaNisnBox');
+      box.style.display = box.style.display === 'none' ? 'block' : 'none';
+    }
+
+    async function handleGatekeeperLogin(e, mode) {
+      e.preventDefault();
+      const errBox = document.getElementById('gkError');
+      errBox.style.display = 'none';
+
+      const btn = mode === 'siswa' ? document.getElementById('btnGkSiswa') : document.getElementById('btnGkGuru');
+      const origText = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = 'Memverifikasi Akses...';
+
+      try {
+        const params = new URLSearchParams({
+          action: 'login_portal',
+          mode: mode,
+          periode: appState.periode || '2026-27'
+        });
+
+        if (mode === 'siswa') {
+          params.set('nisn', document.getElementById('gkInputNisn').value.trim());
+        } else {
+          params.set('passcode', document.getElementById('gkInputPasscode').value.trim());
+        }
+
+        const res = await fetch(`${API_URL}?${params.toString()}`, { method: 'GET', redirect: 'follow' });
+        const data = await res.json();
+
+        if (data.status !== 'ok') {
+          errBox.style.display = 'block';
+          errBox.textContent = data.message || 'Gagal melakukan verifikasi akses.';
+          return;
+        }
+
+        try {
+          localStorage.setItem(PORTAL_AUTH_STORAGE_KEY, JSON.stringify(data));
+        } catch (err) {}
+
+        applyPortalUserSession(data, true);
+      } catch (err) {
+        errBox.style.display = 'block';
+        errBox.textContent = 'Gagal terhubung ke server verifikasi. Periksa koneksi internet Anda dan coba lagi.';
+      } finally {
+        btn.disabled = false;
+        btn.textContent = origText;
+      }
+    }
+
+    function applyPortalUserSession(sessionData, isFreshLogin) {
+      appState.portalUser = sessionData;
+      document.getElementById('gatekeeperModal').classList.remove('open');
+
+      const pill = document.getElementById('activeUserPill');
+      const label = document.getElementById('activeUserLabel');
+      pill.style.display = 'inline-flex';
+
+      if (sessionData.role === 'siswa' && sessionData.siswa) {
+        const s = sessionData.siswa;
+        label.textContent = `${s.nama} (${s.rombel})`;
+
+        // Otomatis isi & kunci form Laporan Siswa untuk wali murid
+        document.getElementById('inputNis').value = s.nis;
+        document.getElementById('inputNisn').value = s.nisn;
+        document.getElementById('btnCekSiswaLain').style.display = 'none';
+        sessionStorage.setItem('tka_siswa_auth', JSON.stringify({ nis: s.nis, nisn: s.nisn }));
+        fetchLaporanSiswa(s.nis, s.nisn, true);
+      } else {
+        label.textContent = 'Mode Guru / Kurikulum';
+        document.getElementById('btnCekSiswaLain').style.display = 'inline-flex';
+      }
+
+      if (isFreshLogin) {
+        checkSavedCbtHistoryBanner();
+      }
+    }
+
+    function logoutPortal() {
+      if (isExamLockActive) return;
+      try {
+        localStorage.removeItem(PORTAL_AUTH_STORAGE_KEY);
+        sessionStorage.removeItem('tka_siswa_auth');
+      } catch (e) {}
+
+      appState.portalUser = null;
+      document.getElementById('activeUserPill').style.display = 'none';
+      document.getElementById('gkInputNisn').value = '';
+      document.getElementById('gkInputPasscode').value = '';
+      document.getElementById('gkError').style.display = 'none';
+      logoutSiswa(true);
+      switchTab('beranda');
+      document.getElementById('gatekeeperModal').classList.add('open');
+    }
+
+    /* =====================================================================
+       PEMUATAN DATA UTAMA PORTAL
+       ===================================================================== */
     function applyInitPayload(data) {
       appState.initData = data;
       appState.periode = data.periode_terpilih;
@@ -1988,16 +2293,22 @@
 
         prefetchPaketLatihan();
 
-        const savedSession = sessionStorage.getItem('tka_siswa_auth');
-        if (savedSession) {
-          try {
-            const parsed = JSON.parse(savedSession);
-            if (parsed.nis && parsed.nisn) {
-              document.getElementById('inputNis').value = parsed.nis;
-              document.getElementById('inputNisn').value = parsed.nisn;
-              fetchLaporanSiswa(parsed.nis, parsed.nisn, true);
-            }
-          } catch (e) {}
+        // Otomatis muat rapor siswa jika sedang login sebagai siswa
+        if (appState.portalUser && appState.portalUser.role === 'siswa' && appState.portalUser.siswa) {
+          const s = appState.portalUser.siswa;
+          fetchLaporanSiswa(s.nis, s.nisn, true);
+        } else {
+          const savedSession = sessionStorage.getItem('tka_siswa_auth');
+          if (savedSession) {
+            try {
+              const parsed = JSON.parse(savedSession);
+              if (parsed.nis && parsed.nisn) {
+                document.getElementById('inputNis').value = parsed.nis;
+                document.getElementById('inputNisn').value = parsed.nisn;
+                fetchLaporanSiswa(parsed.nis, parsed.nisn, true);
+              }
+            } catch (e) {}
+          }
         }
       } catch (err) {
         loader.style.display = 'none';
@@ -2021,7 +2332,9 @@
     function onChangePeriode() {
       const val = document.getElementById('selectPeriode').value;
       appState.cbtLoadedPeriode = null;
-      logoutSiswa(false);
+      if (!appState.portalUser || appState.portalUser.role !== 'siswa') {
+        logoutSiswa(false);
+      }
       loadInitData(val);
     }
 
@@ -2035,13 +2348,21 @@
       const target = document.getElementById(`tab-${tabName}`);
       if (target) target.classList.add('active');
 
+      if (tabName === 'laporan' && appState.portalUser && appState.portalUser.role === 'siswa') {
+        const s = appState.portalUser.siswa;
+        if (document.getElementById('hasilLaporanWrapper').style.display !== 'block') {
+          fetchLaporanSiswa(s.nis, s.nisn, true);
+        }
+      }
+
       if (tabName === 'latihan') {
+        checkSavedCbtHistoryBanner();
         loadPaketLatihan();
       }
     }
 
     /* =====================================================================
-       RENDER TAB 1: BERANDA, DASHBOARD KURIKULUM (TO/MAPEL/ROMBEL) & TIMELINE
+       RENDER TAB 1: BERANDA, DASHBOARD KURIKULUM & TIMELINE
        ===================================================================== */
     function renderBeranda(data) {
       const periodeObj = (data.daftar_periode || []).find(p => p.ID_PERIODE === data.periode_terpilih);
@@ -2208,9 +2529,7 @@
                 color: '#64748B',
                 font: { size: 12, weight: '600' }
               },
-              grid: {
-                color: '#E2E8F0'
-              },
+              grid: { color: '#E2E8F0' },
               border: { display: false }
             },
             x: {
@@ -2413,7 +2732,7 @@
     }
 
     /* =====================================================================
-       RENDER TAB 2: PORTAL LAPORAN SISWA (NIS + NISN)
+       RENDER TAB 2: PORTAL LAPORAN SISWA (OTOMATIS TERISI DARI LOGIN NISN)
        ===================================================================== */
     function handleCekLaporan(e) {
       e.preventDefault();
@@ -2430,7 +2749,7 @@
       btn.textContent = 'Memeriksa Data Siswa...';
 
       try {
-        const url = `${API_URL}?action=cek_laporan&periode=${encodeURIComponent(appState.periode)}&nis=${encodeURIComponent(nis)}&nisn=${encodeURIComponent(nisn)}`;
+        const url = `${API_URL}?action=cek_laporan&periode=${encodeURIComponent(appState.periode || '2026-27')}&nis=${encodeURIComponent(nis)}&nisn=${encodeURIComponent(nisn)}`;
         const res = await fetch(url, { method: 'GET', redirect: 'follow' });
         const data = await res.json();
 
@@ -2601,7 +2920,7 @@
     }
 
     /* =====================================================================
-       RENDER TAB 3: KISI-KISI TKA (1 BARIS PER MAPEL + PREVIEW DOKUMEN FULL)
+       RENDER TAB 3: KISI-KISI TKA
        ===================================================================== */
     function renderKisiKisi(kisiList) {
       const container = document.getElementById('kisiContainer');
@@ -2727,11 +3046,11 @@
     }
 
     /* =====================================================================
-       RENDER TAB 5: LATIHAN MANDIRI CBT (PG, PGK, BS, ACAK, ANTI-RESET & EXAM LOCK)
+       RENDER TAB 5: LATIHAN MANDIRI CBT (PG, PGK, BS, EXAM LOCK & PDF FIX)
        ===================================================================== */
     const CBT_SESSION_STORAGE_KEY = 'tka_active_cbt_session_v1';
     const MAX_CBT_VIOLATIONS = 3;
-    const PENALTY_DURATION_MS = 5 * 60 * 1000; // 5 menit
+    const PENALTY_DURATION_MS = 5 * 60 * 1000;
     let pendingPaketIndex = null;
     let isExamLockActive = false;
     let violationCooldown = false;
@@ -2770,7 +3089,6 @@
     function triggerExamViolation(reasonText) {
       if (!isExamLockActive || !appState.cbtActivePaket || violationCooldown) return;
 
-      // Jika sedang dalam masa hukuman 5 menit, jangan tambah hitungan pelanggaran baru
       if (appState.cbtPenaltyUntil && Date.now() < appState.cbtPenaltyUntil) {
         showViolationModal(reasonText, true);
         return;
@@ -3032,6 +3350,52 @@
       }
     }
 
+    /* =====================================================================
+       PENYIMPANAN & AKSES ULANG HASIL CBT TERAKHIR (ANTI LUPA)
+       ===================================================================== */
+    function checkSavedCbtHistoryBanner() {
+      const banner = document.getElementById('cbtSavedHistoryBanner');
+      const desc = document.getElementById('cbtSavedHistoryDesc');
+      if (!banner) return;
+
+      try {
+        const raw = localStorage.getItem(CBT_LAST_RESULT_STORAGE_KEY);
+        if (!raw) {
+          banner.style.display = 'none';
+          return;
+        }
+        const saved = JSON.parse(raw);
+        if (!saved || !saved.paket) {
+          banner.style.display = 'none';
+          return;
+        }
+
+        // Jika login sebagai siswa, hanya tampilkan riwayat milik siswa tersebut
+        if (appState.portalUser && appState.portalUser.role === 'siswa' && appState.portalUser.siswa) {
+          if (String(saved.student.nis) !== String(appState.portalUser.siswa.nis)) {
+            banner.style.display = 'none';
+            return;
+          }
+        }
+
+        desc.innerHTML = `<strong>${escapeHtml(saved.student.nama)}</strong> — Paket: <strong>${escapeHtml(saved.paket.judul)}</strong> • Skor Akhir: <strong>${saved.skor}</strong> (${escapeHtml(saved.predikat)})`;
+        banner.style.display = 'block';
+      } catch (e) {
+        banner.style.display = 'none';
+      }
+    }
+
+    function bukaKembaliHasilCbtTersimpan() {
+      try {
+        const raw = localStorage.getItem(CBT_LAST_RESULT_STORAGE_KEY);
+        if (!raw) return;
+        const saved = JSON.parse(raw);
+        if (!saved || !saved.paket) return;
+
+        renderHasilDanPembahasanCBT(saved, false);
+      } catch (e) {}
+    }
+
     function renderDaftarPaketCBT(paketList) {
       const container = document.getElementById('paketLatihanContainer');
       appState.cbtPaketList = paketList || [];
@@ -3179,10 +3543,35 @@
       if (!paket || !paket.soal || !paket.soal.length) return;
 
       pendingPaketIndex = idx;
-      document.getElementById('cbtStartPaketInfo').innerHTML =
-        `Paket: <strong>${escapeHtml(paket.judul)}</strong> (${paket.jumlah_soal} Soal • ${paket.durasi_menit} Menit).<br>Masukkan Nama Lengkap dan NIS Anda sebelum memulai.`;
+
+      const inputNama = document.getElementById('cbtInputNama');
+      const inputNis = document.getElementById('cbtInputNis');
+
+      // Jika login sebagai siswa, otomatis kunci Nama & NIS milik siswa tersebut
+      if (appState.portalUser && appState.portalUser.role === 'siswa' && appState.portalUser.siswa) {
+        const s = appState.portalUser.siswa;
+        inputNama.value = s.nama;
+        inputNis.value = s.nis;
+        inputNama.readOnly = true;
+        inputNis.readOnly = true;
+        inputNama.style.background = '#F1F5F9';
+        inputNis.style.background = '#F1F5F9';
+
+        document.getElementById('cbtStartPaketInfo').innerHTML =
+          `Paket: <strong>${escapeHtml(paket.judul)}</strong> (${paket.jumlah_soal} Soal • ${paket.durasi_menit} Menit).<br>Identitas peserta terverifikasi otomatis sesuai NISN Ananda.`;
+      } else {
+        inputNama.value = '';
+        inputNis.value = '';
+        inputNama.readOnly = false;
+        inputNis.readOnly = false;
+        inputNama.style.background = '#FFFFFF';
+        inputNis.style.background = '#FFFFFF';
+
+        document.getElementById('cbtStartPaketInfo').innerHTML =
+          `Paket: <strong>${escapeHtml(paket.judul)}</strong> (${paket.jumlah_soal} Soal • ${paket.durasi_menit} Menit).<br>Masukkan Nama Lengkap dan NIS Anda sebelum memulai.`;
+      }
+
       document.getElementById('cbtStartModal').classList.add('open');
-      setTimeout(() => document.getElementById('cbtInputNama').focus(), 100);
     }
 
     function closeCbtStartModal() {
@@ -3214,6 +3603,7 @@
       appState.cbtCurrentIdx = 0;
       appState.cbtAnswers = {};
       appState.cbtViolations = 0;
+      appState.cbtPenaltyUntil = 0;
       appState.cbtStartTimestamp = now;
       appState.cbtEndTimestamp = now + (durasiDetik * 1000);
       appState.cbtSecondsLeft = durasiDetik;
@@ -3411,8 +3801,17 @@
       document.getElementById('cbtShareModal').classList.remove('open');
     }
 
+    /* =====================================================================
+       PERBAIKAN EXPORT PDF HASIL & PEMBAHASAN CBT (ANTI HALAMAN PUTIH KOSONG)
+       ===================================================================== */
     function downloadCbtResultPdf(silentMode = false) {
-      const element = document.getElementById('cbtPrintableArea');
+      // Pastikan modal share tertutup dan posisi scroll berada di paling atas
+      closeCbtShareModal();
+      window.scrollTo(0, 0);
+
+      const sourceEl = document.getElementById('cbtPrintableArea');
+      if (!sourceEl) return;
+
       const meta = appState.cbtLastResultMeta || { nama: 'Siswa', nis: '000', judul: 'Latihan_TKA' };
       const safeNama = meta.nama.replace(/[^a-zA-Z0-9_-]/g, '_');
       const safeJudul = meta.judul.replace(/[^a-zA-Z0-9_-]/g, '_');
@@ -3423,30 +3822,72 @@
         const origText = btn ? btn.textContent : '';
         if (btn && !silentMode) {
           btn.disabled = true;
-          btn.textContent = 'Menyiapkan Berkas PDF...';
+          btn.textContent = 'Menyiapkan Dokumen PDF...';
         }
 
+        // Buat wadah kloning bersih di pojok kiri atas (x:0, y:0) agar html2canvas tidak menangkap viewport kosong
+        const cloneStage = document.createElement('div');
+        cloneStage.style.position = 'absolute';
+        cloneStage.style.top = '0';
+        cloneStage.style.left = '0';
+        cloneStage.style.width = '760px';
+        cloneStage.style.background = '#FFFFFF';
+        cloneStage.style.padding = '24px';
+        cloneStage.style.zIndex = '-1';
+        cloneStage.style.color = '#0F172A';
+        cloneStage.style.fontFamily = "'Plus Jakarta Sans', sans-serif";
+
+        const clonedContent = sourceEl.cloneNode(true);
+        clonedContent.querySelectorAll('[data-html2canvas-ignore="true"], .no-print').forEach(el => el.remove());
+
+        // Kop Resmi Sekolah di bagian atas PDF
+        const kopHtml = `
+          <div style="border-bottom:2.5px solid #0B4D3B; padding-bottom:12px; margin-bottom:16px;">
+            <div style="font-size:15px; font-weight:800; color:#0B4D3B; text-transform:uppercase;">
+              SMP Al-Irsyad Surabaya
+            </div>
+            <div style="font-size:11.5px; color:#475569;">
+              Sekolah Islam dengan Pendidikan Holistik Qur'ani • Laporan Hasil &amp; Pembahasan Latihan Mandiri TKA
+            </div>
+          </div>
+        `;
+
+        cloneStage.innerHTML = kopHtml;
+        cloneStage.appendChild(clonedContent);
+        document.body.appendChild(cloneStage);
+
         const opt = {
-          margin:       [10, 10, 10, 10],
+          margin:       [10, 10, 12, 10],
           filename:     fileName,
           image:        { type: 'jpeg', quality: 0.96 },
-          html2canvas:  { scale: 2, useCORS: true, logging: false },
+          html2canvas:  {
+            scale: 2,
+            useCORS: true,
+            logging: false,
+            scrollX: 0,
+            scrollY: 0,
+            windowWidth: 800
+          },
           jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
-          pagebreak:    { mode: ['avoid-all', 'css', 'legacy'] }
+          pagebreak:    { mode: ['css', 'legacy'] }
         };
 
-        html2pdf().set(opt).from(element).save().then(() => {
-          if (btn && !silentMode) {
-            btn.disabled = false;
-            btn.textContent = origText;
-          }
-        }).catch(() => {
-          if (btn && !silentMode) {
-            btn.disabled = false;
-            btn.textContent = origText;
-          }
-          window.print();
-        });
+        setTimeout(() => {
+          html2pdf().set(opt).from(cloneStage).save().then(() => {
+            if (cloneStage.parentNode) cloneStage.parentNode.removeChild(cloneStage);
+            if (btn && !silentMode) {
+              btn.disabled = false;
+              btn.textContent = origText;
+            }
+          }).catch(() => {
+            if (cloneStage.parentNode) cloneStage.parentNode.removeChild(cloneStage);
+            if (btn && !silentMode) {
+              btn.disabled = false;
+              btn.textContent = origText;
+            }
+            window.print();
+          });
+        }, 150);
       } else {
         window.print();
       }
@@ -3460,7 +3901,24 @@
             ? 'Berkas PDF Hasil & Pembahasan sedang diunduh ke perangkat Anda. Silakan lampirkan file PDF tersebut pada pesan WhatsApp yang terbuka.'
             : 'Berkas PDF Hasil & Pembahasan sedang diunduh ke perangkat Anda. Silakan lampirkan file PDF tersebut pada aplikasi Email yang terbuka.'
         );
-      }, 400);
+      }, 450);
+    }
+
+    /* =====================================================================
+       PENGIRIMAN SKOR CBT DENGAN AUTO-RETRY (TAHAN ANTREAN BERSAMAAN)
+       ===================================================================== */
+    async function kirimHasilCbtDenganRetry(queryString, maxRetries = 3) {
+      const jitterMs = Math.floor(Math.random() * 2500);
+      await new Promise(r => setTimeout(r, jitterMs));
+
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+          const res = await fetch(`${API_URL}?${queryString}`, { method: 'GET', redirect: 'follow' });
+          if (res.ok) return true;
+        } catch (e) {}
+        await new Promise(r => setTimeout(r, attempt * 2000));
+      }
+      return false;
     }
 
     function selesaiUjianCBT(isTimeUp) {
@@ -3522,47 +3980,27 @@
       const skor = total > 0 ? Math.round((benar / total) * 100) : 0;
       const predikat = skor >= 80 ? 'Sangat Baik' : (skor >= 65 ? 'Tuntas Target' : 'Perlu Penguatan');
 
-      appState.cbtLastResultMeta = {
-        nama: student.nama,
-        nis: student.nis,
-        judul: paket.judul || 'Latihan_TKA'
+      const resultPayload = {
+        student,
+        paket,
+        durasiTeks,
+        jumlahPelanggaran,
+        benar,
+        total,
+        skor,
+        predikat,
+        teksDikuasai,
+        teksPerbaikan,
+        hasilEvaluasi,
+        waktuSelesai: new Date().toLocaleString('id-ID')
       };
 
-      document.getElementById('cbtExamWrapper').style.display = 'none';
-      document.getElementById('cbtResultWrapper').style.display = 'block';
+      // Simpan riwayat hasil terakhir di perangkat agar bisa dibuka kembali kapan saja
+      try {
+        localStorage.setItem(CBT_LAST_RESULT_STORAGE_KEY, JSON.stringify(resultPayload));
+      } catch (e) {}
 
-      document.getElementById('cbtResTitle').textContent =
-        `Hasil Latihan: ${student.nama} (${student.nis}) — ${paket.judul}`;
-      document.getElementById('cbtResSkor').textContent = skor;
-      document.getElementById('cbtResBenar').textContent = benar;
-      document.getElementById('cbtResTotalSoal').textContent = `dari ${total} soal (${durasiTeks})`;
-      document.getElementById('cbtResPredikat').textContent = predikat;
-      document.getElementById('cbtResDikuasai').textContent = teksDikuasai;
-      document.getElementById('cbtResPerbaikan').textContent = teksPerbaikan;
-
-      document.getElementById('cbtReviewList').innerHTML = paket.soal.map((s, i) => {
-        const ev = hasilEvaluasi[i];
-        const matLabel = escapeHtml(s.materi || paket.mapel || 'Umum');
-        return `
-          <div style="border:1px solid var(--border); border-left:4px solid ${ev.isCorrect ? 'var(--success)' : 'var(--danger)'}; border-radius:12px; padding:16px; background:#FAFCFB;">
-            <div style="display:flex; justify-content:space-between; gap:8px; margin-bottom:8px; flex-wrap:wrap;">
-              <div>
-                <strong>Soal No. ${i + 1} (${escapeHtml(getTipeSoal(s))})</strong>
-                <span class="badge badge-info" style="margin-left:6px;">Materi: ${matLabel}</span>
-              </div>
-              <span class="badge ${ev.isCorrect ? 'badge-success' : 'badge-danger'}">
-                ${ev.isCorrect ? 'Benar' : 'Kurang Tepat'}
-              </span>
-            </div>
-            <p style="font-size:14px; margin-bottom:10px;">${escapeHtml(s.pertanyaan)}</p>
-            <div style="font-size:13px; margin-bottom:8px;">
-              Jawaban Anda: <strong>${escapeHtml(ev.userText)}</strong> &nbsp;|&nbsp;
-              Kunci Jawaban: <strong style="color:var(--success);">${escapeHtml(ev.keyText)}</strong>
-            </div>
-            ${s.pembahasan ? `<div style="background:#FFFFFF; border:1px solid var(--border); padding:10px 12px; border-radius:8px; font-size:13px; color:var(--text-muted);"><strong>Pembahasan:</strong> ${escapeHtml(s.pembahasan)}</div>` : ''}
-          </div>
-        `;
-      }).join('');
+      renderHasilDanPembahasanCBT(resultPayload, true);
 
       const saveParams = new URLSearchParams({
         action: 'simpan_hasil_cbt',
@@ -3581,7 +4019,58 @@
         perbaikan: teksPerbaikan,
         pelanggaran: jumlahPelanggaran
       });
-      fetch(`${API_URL}?${saveParams.toString()}`, { method: 'GET', redirect: 'follow' }).catch(() => {});
+      kirimHasilCbtDenganRetry(saveParams.toString());
+    }
+
+    function renderHasilDanPembahasanCBT(payload, showModal) {
+      const {
+        student, paket, durasiTeks, jumlahPelanggaran,
+        benar, total, skor, predikat, teksDikuasai, teksPerbaikan, hasilEvaluasi
+      } = payload;
+
+      appState.cbtLastResultMeta = {
+        nama: student.nama,
+        nis: student.nis,
+        judul: paket.judul || 'Latihan_TKA'
+      };
+
+      document.getElementById('cbtLobbyWrapper').style.display = 'none';
+      document.getElementById('cbtExamWrapper').style.display = 'none';
+      document.getElementById('cbtResultWrapper').style.display = 'block';
+      window.scrollTo(0, 0);
+
+      document.getElementById('cbtResTitle').textContent =
+        `Hasil Latihan: ${student.nama} (${student.nis}) — ${paket.judul}`;
+      document.getElementById('cbtResSkor').textContent = skor;
+      document.getElementById('cbtResBenar').textContent = benar;
+      document.getElementById('cbtResTotalSoal').textContent = `dari ${total} soal (${durasiTeks})`;
+      document.getElementById('cbtResPredikat').textContent = predikat;
+      document.getElementById('cbtResDikuasai').textContent = teksDikuasai;
+      document.getElementById('cbtResPerbaikan').textContent = teksPerbaikan;
+
+      document.getElementById('cbtReviewList').innerHTML = paket.soal.map((s, i) => {
+        const ev = hasilEvaluasi[i];
+        const matLabel = escapeHtml(s.materi || paket.mapel || 'Umum');
+        return `
+          <div style="border:1px solid var(--border); border-left:4px solid ${ev.isCorrect ? 'var(--success)' : 'var(--danger)'}; border-radius:12px; padding:16px; background:#FAFCFB; page-break-inside:avoid;">
+            <div style="display:flex; justify-content:space-between; gap:8px; margin-bottom:8px; flex-wrap:wrap;">
+              <div>
+                <strong>Soal No. ${i + 1} (${escapeHtml(getTipeSoal(s))})</strong>
+                <span class="badge badge-info" style="margin-left:6px;">Materi: ${matLabel}</span>
+              </div>
+              <span class="badge ${ev.isCorrect ? 'badge-success' : 'badge-danger'}">
+                ${ev.isCorrect ? 'Benar' : 'Kurang Tepat'}
+              </span>
+            </div>
+            <p style="font-size:14px; margin-bottom:10px;">${escapeHtml(s.pertanyaan)}</p>
+            <div style="font-size:13px; margin-bottom:8px;">
+              Jawaban Anda: <strong>${escapeHtml(ev.userText)}</strong> &nbsp;|&nbsp;
+              Kunci Jawaban: <strong style="color:var(--success);">${escapeHtml(ev.keyText)}</strong>
+            </div>
+            ${s.pembahasan ? `<div style="background:#FFFFFF; border:1px solid var(--border); padding:10px 12px; border-radius:8px; font-size:13px; color:var(--text-muted);"><strong>Pembahasan:</strong> ${escapeHtml(s.pembahasan)}</div>` : ''}
+          </div>
+        `;
+      }).join('');
 
       const pesanLaporan = [
         `*LAPORAN HASIL LATIHAN MANDIRI TKA*`,
@@ -3617,14 +4106,17 @@
       document.getElementById('btnBottomShareWa').href = waHref;
       document.getElementById('btnBottomShareEmail').href = mailHref;
 
-      document.getElementById('cbtShareSummaryText').innerHTML =
-        `<strong>${escapeHtml(student.nama)}</strong> (NIS: ${escapeHtml(student.nis)}) — Skor: <strong>${skor}</strong> (${predikat}). Data otomatis tersimpan ke rekap guru.`;
-      document.getElementById('cbtShareModal').classList.add('open');
+      if (showModal) {
+        document.getElementById('cbtShareSummaryText').innerHTML =
+          `<strong>${escapeHtml(student.nama)}</strong> (NIS: ${escapeHtml(student.nis)}) — Skor: <strong>${skor}</strong> (${predikat}). Data otomatis tersimpan ke rekap guru.`;
+        document.getElementById('cbtShareModal').classList.add('open');
+      }
     }
 
     function kembaliKeLobbyCBT() {
       disableExamLock();
       clearCbtSessionState();
+      checkSavedCbtHistoryBanner();
       document.getElementById('cbtResultWrapper').style.display = 'none';
       document.getElementById('cbtLobbyWrapper').style.display = 'block';
     }
