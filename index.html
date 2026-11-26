@@ -1185,10 +1185,10 @@
   <!-- MAIN CONTENT -->
   <main class="container">
 
-    <!-- LOADING INITIAL -->
-    <div id="globalLoader" class="loader-wrap">
-      <div class="spinner"></div>
-      <p>Menghubungkan ke Database Kurikulum SMP Al-Irsyad Surabaya...</p>
+   <!-- STATUS SINKRONISASI RINGAN -->
+    <div id="globalLoader" style="display:none; background:var(--primary-light); color:var(--primary-dark); border:1px solid var(--primary-border); border-radius:10px; padding:9px 14px; font-size:12.5px; font-weight:600; margin-bottom:14px; align-items:center; gap:10px;">
+      <div class="spinner" style="width:16px; height:16px; border-width:2.5px; margin:0; flex-shrink:0;"></div>
+      <span id="globalLoaderText">Menyelaraskan data terbaru dari sekolah...</span>
     </div>
 
     <!-- ERROR BANNER -->
@@ -1706,12 +1706,49 @@
       });
     });
 
+    function applyInitPayload(data) {
+      appState.initData = data;
+      appState.periode = data.periode_terpilih;
+
+      populatePeriodeDropdown(data.daftar_periode, data.periode_terpilih);
+      renderBeranda(data);
+      renderKisiKisi(data.kisi_kisi || []);
+      renderBankSoal(data.bank_soal || []);
+
+      const activeBtn = document.querySelector('.nav-btn.active');
+      const activeTab = activeBtn ? activeBtn.getAttribute('data-tab') : 'beranda';
+      document.getElementById(`tab-${activeTab}`).classList.add('active');
+    }
+
     async function loadInitData(requestedPeriode) {
       const loader = document.getElementById('globalLoader');
+      const loaderText = document.getElementById('globalLoaderText');
       const errBox = document.getElementById('globalError');
-      loader.style.display = 'block';
       errBox.style.display = 'none';
 
+      const cacheKey = `tka_portal_init_${requestedPeriode || 'default'}`;
+      let hasLocalCache = false;
+
+      // 1. Tampilkan seketika (<0,1 detik) jika HP sudah pernah menyimpan data sebelumnya
+      try {
+        const rawCache = localStorage.getItem(cacheKey);
+        if (rawCache) {
+          const parsedCache = JSON.parse(rawCache);
+          if (parsedCache && parsedCache.status === 'ok') {
+            applyInitPayload(parsedCache);
+            hasLocalCache = true;
+          }
+        }
+      } catch (e) {}
+
+      // Jika belum pernah dibuka sama sekali di HP ini, tampilkan langsung kerangka Beranda
+      if (!hasLocalCache) {
+        document.getElementById('tab-beranda').classList.add('active');
+        loaderText.textContent = 'Memuat data statistik dan jadwal terbaru...';
+        loader.style.display = 'flex';
+      }
+
+      // 2. Ambil data terbaru di latar belakang (Silent Background Refresh)
       try {
         const url = requestedPeriode
           ? `${API_URL}?action=init&periode=${encodeURIComponent(requestedPeriode)}`
@@ -1722,22 +1759,15 @@
         const data = await res.json();
 
         if (data.status !== 'ok') {
-          throw new Error(data.message || 'Gagal memuat data awal dari spreadsheet.');
+          throw new Error(data.message || 'Gagal memuat data dari spreadsheet.');
         }
 
-        appState.initData = data;
-        appState.periode = data.periode_terpilih;
-
-        populatePeriodeDropdown(data.daftar_periode, data.periode_terpilih);
-        renderBeranda(data);
-        renderKisiKisi(data.kisi_kisi || []);
-        renderBankSoal(data.bank_soal || []);
-        
+        applyInitPayload(data);
         loader.style.display = 'none';
 
-        const activeBtn = document.querySelector('.nav-btn.active');
-        const activeTab = activeBtn ? activeBtn.getAttribute('data-tab') : 'beranda';
-        document.getElementById(`tab-${activeTab}`).classList.add('active');
+        try {
+          localStorage.setItem(cacheKey, JSON.stringify(data));
+        } catch (e) {}
 
         const savedSession = sessionStorage.getItem('tka_siswa_auth');
         if (savedSession) {
@@ -1752,8 +1782,10 @@
         }
       } catch (err) {
         loader.style.display = 'none';
-        errBox.style.display = 'block';
-        errBox.innerHTML = `<strong>Gagal Memuat Data:</strong> ${escapeHtml(err.message)} <br><button class="btn btn-outline btn-sm" style="margin-top:8px;" onclick="loadInitData('${escapeHtml(requestedPeriode)}')">Coba Muat Ulang</button>`;
+        if (!hasLocalCache) {
+          errBox.style.display = 'block';
+          errBox.innerHTML = `<strong>Koneksi Terkendala:</strong> ${escapeHtml(err.message)} <br><button class="btn btn-outline btn-sm" style="margin-top:8px;" onclick="loadInitData('${escapeHtml(requestedPeriode)}')">Coba Muat Ulang</button>`;
+        }
       }
     }
 
