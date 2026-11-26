@@ -2584,9 +2584,161 @@
     }
 
     /* =====================================================================
-       RENDER TAB 5: LATIHAN MANDIRI CBT
+       RENDER TAB 5: LATIHAN MANDIRI CBT (PG, PGK, BS, ACAK & ANTI-RESET)
        ===================================================================== */
-    async function renderDaftarPaketCBT(paketList) {
+    const CBT_SESSION_STORAGE_KEY = 'tka_active_cbt_session_v1';
+    let pendingPaketIndex = null;
+
+    function shuffleArray(arr) {
+      const copy = [...arr];
+      for (let i = copy.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+      }
+      return copy;
+    }
+
+    function formatDurasiDetik(totalDetik) {
+      const m = Math.floor(totalDetik / 60);
+      const s = totalDetik % 60;
+      if (m > 0 && s > 0) return `${m} menit ${s} detik`;
+      if (m > 0) return `${m} menit`;
+      return `${s} detik`;
+    }
+
+    function getTipeSoal(soal) {
+      const t = String(soal.tipe || 'PG').trim().toUpperCase();
+      if (t === 'PGK' || t === 'KOMPLEKS' || t === 'PILIHAN GANDA KOMPLEKS') return 'PGK';
+      if (t === 'BS' || t === 'BENAR SALAH' || t === 'BENAR/SALAH') return 'BS';
+      return 'PG';
+    }
+
+    function getActiveOpsiKeys(soal) {
+      return ['A', 'B', 'C', 'D', 'E'].filter(k => soal.opsi && String(soal.opsi[k] || '').trim() !== '');
+    }
+
+    function isSoalTerjawab(idx) {
+      const paket = appState.cbtActivePaket;
+      if (!paket || !paket.soal || !paket.soal[idx]) return false;
+      const soal = paket.soal[idx];
+      const ans = appState.cbtAnswers[idx];
+      const tipe = getTipeSoal(soal);
+
+      if (tipe === 'PGK') {
+        return Array.isArray(ans) && ans.length > 0;
+      }
+      if (tipe === 'BS') {
+        const keys = getActiveOpsiKeys(soal);
+        return ans && typeof ans === 'object' && keys.every((_, rIdx) => ans[rIdx] === 'B' || ans[rIdx] === 'S');
+      }
+      return typeof ans === 'string' && ans !== '';
+    }
+
+    function evaluasiJawabanSoal(soal, userAns) {
+      const tipe = getTipeSoal(soal);
+      const rawKunci = String(soal.kunci || '').trim().toUpperCase();
+
+      if (tipe === 'PGK') {
+        const keyArr = rawKunci.split(',').map(x => x.trim()).filter(Boolean).sort();
+        const usrArr = Array.isArray(userAns) ? [...userAns].map(x => x.trim().toUpperCase()).sort() : [];
+        const isCorrect = keyArr.length > 0 &&
+          usrArr.length === keyArr.length &&
+          usrArr.every((val, i) => val === keyArr[i]);
+        return {
+          isCorrect,
+          userText: usrArr.length ? usrArr.join(', ') : 'Tidak Dijawab',
+          keyText: keyArr.join(', ')
+        };
+      }
+
+      if (tipe === 'BS') {
+        const keys = getActiveOpsiKeys(soal);
+        const keyArr = rawKunci.split(',').map(x => x.trim()).filter(Boolean);
+        const usrObj = (userAns && typeof userAns === 'object') ? userAns : {};
+        const usrArr = keys.map((_, i) => usrObj[i] || '-');
+        const isCorrect = keyArr.length === keys.length &&
+          keys.every((_, i) => usrObj[i] === keyArr[i]);
+        return {
+          isCorrect,
+          userText: usrArr.every(x => x === '-') ? 'Tidak Dijawab' : usrArr.join(', '),
+          keyText: keyArr.join(', ')
+        };
+      }
+
+      const usr = typeof userAns === 'string' ? userAns.trim().toUpperCase() : '';
+      const isCorrect = usr !== '' && usr === rawKunci;
+      return {
+        isCorrect,
+        userText: usr ? `${usr}${soal.opsi[usr] ? ` (${soal.opsi[usr]})` : ''}` : 'Tidak Dijawab',
+        keyText: `${rawKunci}${soal.opsi[rawKunci] ? ` (${soal.opsi[rawKunci]})` : ''}`
+      };
+    }
+
+    function saveCbtSessionState() {
+      if (!appState.cbtActivePaket) return;
+      const payload = {
+        periode: appState.periode,
+        student: appState.cbtStudent,
+        paket: appState.cbtActivePaket,
+        currentIdx: appState.cbtCurrentIdx,
+        answers: appState.cbtAnswers,
+        startTimestamp: appState.cbtStartTimestamp,
+        endTimestamp: appState.cbtEndTimestamp
+      };
+      try {
+        localStorage.setItem(CBT_SESSION_STORAGE_KEY, JSON.stringify(payload));
+      } catch (e) {}
+    }
+
+    function clearCbtSessionState() {
+      appState.cbtActivePaket = null;
+      try {
+        localStorage.removeItem(CBT_SESSION_STORAGE_KEY);
+      } catch (e) {}
+    }
+
+    function restoreCbtSessionIfActive() {
+      try {
+        const raw = localStorage.getItem(CBT_SESSION_STORAGE_KEY);
+        if (!raw) return false;
+        const saved = JSON.parse(raw);
+        if (!saved || !saved.paket || !saved.endTimestamp) return false;
+
+        const remainingSecs = Math.floor((saved.endTimestamp - Date.now()) / 1000);
+        if (remainingSecs <= 0) {
+          clearCbtSessionState();
+          return false;
+        }
+
+        appState.cbtStudent = saved.student || { nama: 'Siswa', nis: '-' };
+        appState.cbtActivePaket = saved.paket;
+        appState.cbtCurrentIdx = saved.currentIdx || 0;
+        appState.cbtAnswers = saved.answers || {};
+        appState.cbtStartTimestamp = saved.startTimestamp || Date.now();
+        appState.cbtEndTimestamp = saved.endTimestamp;
+        appState.cbtSecondsLeft = remainingSecs;
+
+        switchTab('latihan');
+        document.getElementById('cbtLoader').style.display = 'none';
+        document.getElementById('cbtLobbyWrapper').style.display = 'none';
+        document.getElementById('cbtResultWrapper').style.display = 'none';
+        document.getElementById('cbtExamWrapper').style.display = 'block';
+        document.getElementById('cbtExamTitle').textContent =
+          `${saved.paket.judul} (${saved.paket.mapel}) — Peserta: ${appState.cbtStudent.nama} (${appState.cbtStudent.nis})`;
+
+        startTimerCBT();
+        renderSoalCBT();
+        return true;
+      } catch (e) {
+        return false;
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      setTimeout(() => { restoreCbtSessionIfActive(); }, 100);
+    });
+
+    function renderDaftarPaketCBT(paketList) {
       const container = document.getElementById('paketLatihanContainer');
       appState.cbtPaketList = paketList || [];
 
@@ -2630,16 +2782,14 @@
           appState.cbtLoadedPeriode = appState.periode;
           appState.cbtPaketList = freshPaket;
 
-          // Simpan ke localStorage hanya jika daftar paket tidak kosong
           if (freshPaket.length > 0) {
             try {
               localStorage.setItem(cacheKey, JSON.stringify(freshPaket));
             } catch (e) {}
           }
 
-          // Jika pengguna sudah terlanjur membuka tab Latihan CBT, langsung tampilkan hasilnya
           const isCbtTabActive = document.getElementById('tab-latihan').classList.contains('active');
-          const isExamOpen = document.getElementById('cbtExamWrapper').style.display === 'block';
+          const isExamOpen = document.getElementById('cbtExamWrapper').style.display === 'block' || Boolean(appState.cbtActivePaket);
           const isResultOpen = document.getElementById('cbtResultWrapper').style.display === 'block';
 
           if (isCbtTabActive && !isExamOpen && !isResultOpen) {
@@ -2661,9 +2811,15 @@
       const periodeAktif = appState.periode || 'default';
       const cacheKey = `tka_cbt_paket_${periodeAktif}`;
 
+      // Jika sedang ada ujian aktif, jangan tampilkan lobby
+      if (document.getElementById('cbtExamWrapper').style.display === 'block' || appState.cbtActivePaket) {
+        loader.style.display = 'none';
+        lobby.style.display = 'none';
+        return;
+      }
+
       let hasLocalCache = false;
 
-      // 1. Jika sudah ada di memori sesi (dan tidak kosong), langsung tampilkan
       if (appState.cbtLoadedPeriode === appState.periode && appState.cbtPaketList.length > 0) {
         loader.style.display = 'none';
         lobby.style.display = 'block';
@@ -2671,7 +2827,6 @@
         return;
       }
 
-      // 2. Cek cache localStorage (hanya gunakan jika berisi minimal 1 paket)
       try {
         const rawCache = localStorage.getItem(cacheKey);
         if (rawCache) {
@@ -2685,13 +2840,11 @@
         }
       } catch (e) {}
 
-      // Jika belum ada cache valid, tampilkan spinner sementara menunggu server
       if (!hasLocalCache) {
         loader.style.display = 'block';
         lobby.style.display = 'none';
       }
 
-      // 3. Jika proses prefetch sedang berjalan, tunggu prefetch selesai tanpa fetch ganda
       if (appState.cbtFetching) return;
 
       appState.cbtFetching = true;
@@ -2704,11 +2857,11 @@
         const freshPaket = (data && Array.isArray(data.paket)) ? data.paket : [];
 
         loader.style.display = 'none';
-        lobby.style.display = 'block';
 
-        const isExamOpen = document.getElementById('cbtExamWrapper').style.display === 'block';
+        const isExamOpen = document.getElementById('cbtExamWrapper').style.display === 'block' || Boolean(appState.cbtActivePaket);
         const isResultOpen = document.getElementById('cbtResultWrapper').style.display === 'block';
         if (!isExamOpen && !isResultOpen) {
+          lobby.style.display = 'block';
           renderDaftarPaketCBT(freshPaket);
         }
 
@@ -2727,90 +2880,6 @@
         appState.cbtFetching = false;
       }
     }
-    
-    const CBT_SESSION_STORAGE_KEY = 'tka_active_cbt_session_v1';
-    let pendingPaketIndex = null;
-
-    function shuffleArray(arr) {
-      const copy = [...arr];
-      for (let i = copy.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [copy[i], copy[j]] = [copy[j], copy[i]];
-      }
-      return copy;
-    }
-
-    function formatDurasiDetik(totalDetik) {
-      const m = Math.floor(totalDetik / 60);
-      const s = totalDetik % 60;
-      if (m > 0 && s > 0) return `${m} menit ${s} detik`;
-      if (m > 0) return `${m} menit`;
-      return `${s} detik`;
-    }
-
-    function saveCbtSessionState() {
-      if (!appState.cbtActivePaket) return;
-      const payload = {
-        periode: appState.periode,
-        student: appState.cbtStudent,
-        paket: appState.cbtActivePaket,
-        currentIdx: appState.cbtCurrentIdx,
-        answers: appState.cbtAnswers,
-        startTimestamp: appState.cbtStartTimestamp,
-        endTimestamp: appState.cbtEndTimestamp
-      };
-      try {
-        localStorage.setItem(CBT_SESSION_STORAGE_KEY, JSON.stringify(payload));
-      } catch (e) {}
-    }
-
-    function clearCbtSessionState() {
-      try {
-        localStorage.removeItem(CBT_SESSION_STORAGE_KEY);
-      } catch (e) {}
-    }
-
-    function restoreCbtSessionIfActive() {
-      try {
-        const raw = localStorage.getItem(CBT_SESSION_STORAGE_KEY);
-        if (!raw) return false;
-        const saved = JSON.parse(raw);
-        if (!saved || !saved.paket || !saved.endTimestamp) return false;
-
-        const remainingSecs = Math.floor((saved.endTimestamp - Date.now()) / 1000);
-        if (remainingSecs <= 0) {
-          clearCbtSessionState();
-          return false;
-        }
-
-        appState.cbtStudent = saved.student || { nama: 'Siswa', nis: '-' };
-        appState.cbtActivePaket = saved.paket;
-        appState.cbtCurrentIdx = saved.currentIdx || 0;
-        appState.cbtAnswers = saved.answers || {};
-        appState.cbtStartTimestamp = saved.startTimestamp || Date.now();
-        appState.cbtEndTimestamp = saved.endTimestamp;
-        appState.cbtSecondsLeft = remainingSecs;
-
-        switchTab('latihan');
-        document.getElementById('cbtLoader').style.display = 'none';
-        document.getElementById('cbtLobbyWrapper').style.display = 'none';
-        document.getElementById('cbtResultWrapper').style.display = 'none';
-        document.getElementById('cbtExamWrapper').style.display = 'block';
-        document.getElementById('cbtExamTitle').textContent =
-          `${saved.paket.judul} (${saved.paket.mapel}) — Peserta: ${appState.cbtStudent.nama} (${appState.cbtStudent.nis})`;
-
-        startTimerCBT();
-        renderSoalCBT();
-        return true;
-      } catch (e) {
-        return false;
-      }
-    }
-
-    // Panggil otomatis saat halaman selesai dimuat agar sesi ujian yang belum habis langsung pulih
-    document.addEventListener('DOMContentLoaded', () => {
-      setTimeout(() => { restoreCbtSessionIfActive(); }, 150);
-    });
 
     function mulaiPaketCBT(idx) {
       const paket = appState.cbtPaketList[idx];
@@ -2839,7 +2908,6 @@
       const basePaket = appState.cbtPaketList[pendingPaketIndex];
       closeCbtStartModal();
 
-      // Acak urutan nomor soal setiap kali siswa memulai paket
       const randomizedPaket = {
         ...basePaket,
         soal: shuffleArray(basePaket.soal)
@@ -2858,6 +2926,7 @@
 
       saveCbtSessionState();
 
+      document.getElementById('cbtLoader').style.display = 'none';
       document.getElementById('cbtLobbyWrapper').style.display = 'none';
       document.getElementById('cbtResultWrapper').style.display = 'none';
       document.getElementById('cbtExamWrapper').style.display = 'block';
@@ -2888,6 +2957,116 @@
 
       updateDisp();
       appState.cbtTimerInterval = setInterval(updateDisp, 1000);
+    }
+
+    function renderSoalCBT() {
+      const paket = appState.cbtActivePaket;
+      if (!paket || !paket.soal || !paket.soal.length) return;
+
+      const idx = appState.cbtCurrentIdx;
+      const soal = paket.soal[idx];
+      const tipe = getTipeSoal(soal);
+      const opsiKeys = getActiveOpsiKeys(soal);
+
+      document.getElementById('cbtNavNumbers').innerHTML = paket.soal.map((s, i) => {
+        const isAns = isSoalTerjawab(i);
+        const isCurr = i === idx;
+        return `<button class="num-btn ${isAns ? 'answered' : ''} ${isCurr ? 'current' : ''}" onclick="jumpSoal(${i})">${i + 1}</button>`;
+      }).join('');
+
+      const badgeTipeMap = {
+        PG: '<span class="badge badge-neutral">Pilihan Ganda</span>',
+        PGK: '<span class="badge badge-info">Pilihan Ganda Kompleks (Pilih lebih dari satu)</span>',
+        BS: '<span class="badge badge-warning">Pernyataan Benar / Salah</span>'
+      };
+
+      let inputHtml = '';
+
+      if (tipe === 'PGK') {
+        const selectedArr = Array.isArray(appState.cbtAnswers[idx]) ? appState.cbtAnswers[idx] : [];
+        inputHtml = `
+          <div class="opsi-list">
+            ${opsiKeys.map(k => {
+              const isSel = selectedArr.includes(k);
+              return `
+                <div class="opsi-item ${isSel ? 'selected' : ''}" onclick="toggleJawabanPGK('${k}')">
+                  <div class="pgk-check">${isSel ? '✓' : ''}</div>
+                  <div style="font-size:14px; padding-top:2px;"><strong>${k}.</strong> ${escapeHtml(soal.opsi[k])}</div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        `;
+      } else if (tipe === 'BS') {
+        const selectedObj = (appState.cbtAnswers[idx] && typeof appState.cbtAnswers[idx] === 'object')
+          ? appState.cbtAnswers[idx]
+          : {};
+        inputHtml = `
+          <table class="bs-table">
+            <thead>
+              <tr>
+                <th style="text-align:left;">Pernyataan</th>
+                <th style="text-align:center; width:95px;">Benar</th>
+                <th style="text-align:center; width:95px;">Salah</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${opsiKeys.map((k, rIdx) => {
+                const val = selectedObj[rIdx] || '';
+                return `
+                  <tr>
+                    <td>${escapeHtml(soal.opsi[k])}</td>
+                    <td class="bs-choice-cell">
+                      <button type="button" class="bs-pill-btn ${val === 'B' ? 'active-b' : ''}" onclick="pilihJawabanBS(${rIdx}, 'B')">Benar</button>
+                    </td>
+                    <td class="bs-choice-cell">
+                      <button type="button" class="bs-pill-btn ${val === 'S' ? 'active-s' : ''}" onclick="pilihJawabanBS(${rIdx}, 'S')">Salah</button>
+                    </td>
+                  </tr>
+                `;
+              }).join('')}
+            </tbody>
+          </table>
+        `;
+      } else {
+        const selectedKey = typeof appState.cbtAnswers[idx] === 'string' ? appState.cbtAnswers[idx] : '';
+        inputHtml = `
+          <div class="opsi-list">
+            ${opsiKeys.map(k => {
+              const isSel = selectedKey === k;
+              return `
+                <div class="opsi-item ${isSel ? 'selected' : ''}" onclick="pilihJawabanPG('${k}')">
+                  <div class="opsi-key">${k}</div>
+                  <div style="font-size:14px; padding-top:2px;">${escapeHtml(soal.opsi[k])}</div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        `;
+      }
+
+      document.getElementById('cbtQuestionArea').innerHTML = `
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap; margin-bottom:10px;">
+          <div style="font-size:13px; font-weight:700; color:var(--primary);">
+            Soal Nomor ${idx + 1} dari ${paket.soal.length}
+          </div>
+          ${badgeTipeMap[tipe]}
+        </div>
+        ${soal.stimulus ? `<div class="stimulus-box">${escapeHtml(soal.stimulus)}</div>` : ''}
+        ${soal.gambar_url ? `<div style="margin-bottom:14px;"><img src="${escapeHtml(soal.gambar_url)}" alt="Ilustrasi Soal" style="max-width:100%; max-height:320px; border-radius:10px; border:1px solid var(--border);" /></div>` : ''}
+        <div style="font-size:15px; font-weight:600; color:var(--text);">${escapeHtml(soal.pertanyaan)}</div>
+        ${inputHtml}
+      `;
+
+      document.getElementById('btnPrevSoal').disabled = idx === 0;
+      const btnNext = document.getElementById('btnNextSoal');
+      if (idx === paket.soal.length - 1) {
+        btnNext.textContent = 'Selesai & Kumpulkan';
+        btnNext.onclick = () => selesaiUjianCBT(false);
+      } else {
+        btnNext.textContent = 'Berikutnya →';
+        btnNext.onclick = () => navSoal(1);
+      }
     }
 
     function pilihJawabanPG(key) {
@@ -2955,7 +3134,6 @@
       const durasiDetikAktual = Math.max(1, Math.round((Date.now() - (appState.cbtStartTimestamp || Date.now())) / 1000));
       const durasiTeks = formatDurasiDetik(durasiDetikAktual);
 
-      // Hapus sesi aktif karena siswa sudah mengakhiri ujian
       clearCbtSessionState();
 
       let benar = 0;
@@ -3030,7 +3208,6 @@
         `;
       }).join('');
 
-      // 1. Kirim otomatis ke Spreadsheet Guru/Wali Kelas (HASIL_LATIHAN_CBT)
       const saveParams = new URLSearchParams({
         action: 'simpan_hasil_cbt',
         periode: appState.periode || '2026-27',
@@ -3049,7 +3226,6 @@
       });
       fetch(`${API_URL}?${saveParams.toString()}`, { method: 'GET', redirect: 'follow' }).catch(() => {});
 
-      // 2. Siapkan pesan laporan untuk WhatsApp & Email lalu tampilkan dialog box
       const pesanLaporan = [
         `*LAPORAN HASIL LATIHAN MANDIRI TKA*`,
         `SMP Al-Irsyad Surabaya`,
@@ -3084,12 +3260,6 @@
       document.getElementById('cbtResultWrapper').style.display = 'none';
       document.getElementById('cbtLobbyWrapper').style.display = 'block';
     }
-
-    function kembaliKeLobbyCBT() {
-      document.getElementById('cbtResultWrapper').style.display = 'none';
-      document.getElementById('cbtLobbyWrapper').style.display = 'block';
-    }
-
     /* =====================================================================
        HELPER UTILITAS
        ===================================================================== */
