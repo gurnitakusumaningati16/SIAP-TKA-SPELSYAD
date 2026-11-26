@@ -1712,6 +1712,7 @@
             </button>
           </div>
         </div>
+        </div>
     </section>
 
   </main>
@@ -2736,6 +2737,38 @@
     let violationCooldown = false;
     let penaltyInterval = null;
 
+    let penaltyInterval = null;
+
+    function enterFullscreenSafe() {
+      const el = document.documentElement;
+      if (el.requestFullscreen) {
+        el.requestFullscreen().catch(() => {});
+      } else if (el.webkitRequestFullscreen) {
+        el.webkitRequestFullscreen();
+      }
+    }
+
+    function exitFullscreenSafe() {
+      if (document.fullscreenElement && document.exitFullscreen) {
+        document.exitFullscreen().catch(() => {});
+      } else if (document.webkitFullscreenElement && document.webkitExitFullscreen) {
+        document.webkitExitFullscreen();
+      }
+    }
+
+    function enableExamLock() {
+      isExamLockActive = true;
+      document.body.classList.add('exam-lock-mode');
+      enterFullscreenSafe();
+    }
+
+    function disableExamLock() {
+      isExamLockActive = false;
+      document.body.classList.remove('exam-lock-mode');
+      document.getElementById('cbtViolationModal').classList.remove('open');
+      exitFullscreenSafe();
+    }
+
     function triggerExamViolation(reasonText) {
       if (!isExamLockActive || !appState.cbtActivePaket || violationCooldown) return;
 
@@ -2942,6 +2975,7 @@
         currentIdx: appState.cbtCurrentIdx,
         answers: appState.cbtAnswers,
         violations: appState.cbtViolations || 0,
+        penaltyUntil: appState.cbtPenaltyUntil || 0,
         startTimestamp: appState.cbtStartTimestamp,
         endTimestamp: appState.cbtEndTimestamp
       };
