@@ -77,26 +77,25 @@
       gap: 12px;
     }
 
-    .brand-badge {
-      width: 44px;
-      height: 44px;
+   .brand-badge {
+      width: 48px;
+      height: 48px;
       border-radius: 12px;
-      background: rgba(255, 255, 255, 0.14);
-      border: 1px solid rgba(255, 255, 255, 0.25);
+      background: #FFFFFF;
+      border: 1px solid rgba(255, 255, 255, 0.35);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-weight: 800;
-      font-size: 16px;
-      letter-spacing: 0.5px;
-      color: #FCD34D;
+      padding: 4px;
+      overflow: hidden;
       flex-shrink: 0;
     }
 
-    .brand-title h1 {
-      font-size: 16px;
-      font-weight: 700;
-      line-height: 1.25;
+    .brand-badge img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
     }
 
     .brand-title p {
@@ -1145,10 +1144,12 @@
   <header class="topbar">
     <div class="topbar-inner">
       <div class="brand">
-        <div class="brand-badge">TKA</div>
+        <div class="brand-badge">
+          <img src="logo-spelsyad.png" alt="Logo SMP Al-Irsyad Surabaya" onerror="this.style.display='none'; this.parentElement.innerHTML='<span style=&quot;font-weight:800;font-size:13px;color:#0B4D3B;&quot;>SMP</span>';" />
+        </div>
         <div class="brand-title">
           <h1>Portal TKA &amp; Monitoring Try Out</h1>
-          <p>SMP Al-Irsyad Surabaya — Bidang Kurikulum &amp; Evaluasi</p>
+          <p>SMP Al-Irsyad Surabaya — Sekolah Islam dengan Pendidikan Holistik Qur'ani</p>
         </div>
       </div>
 
