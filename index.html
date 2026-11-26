@@ -3805,91 +3805,126 @@
        PERBAIKAN EXPORT PDF HASIL & PEMBAHASAN CBT (ANTI HALAMAN PUTIH KOSONG)
        ===================================================================== */
     function downloadCbtResultPdf(silentMode = false) {
-      // Pastikan modal share tertutup dan posisi scroll berada di paling atas
       closeCbtShareModal();
-      window.scrollTo(0, 0);
 
-      const sourceEl = document.getElementById('cbtPrintableArea');
-      if (!sourceEl) return;
+      let payload = appState.cbtLastResultData;
+      if (!payload) {
+        try {
+          const raw = localStorage.getItem(CBT_LAST_RESULT_STORAGE_KEY);
+          if (raw) payload = JSON.parse(raw);
+        } catch (e) {}
+      }
 
-      const meta = appState.cbtLastResultMeta || { nama: 'Siswa', nis: '000', judul: 'Latihan_TKA' };
-      const safeNama = meta.nama.replace(/[^a-zA-Z0-9_-]/g, '_');
-      const safeJudul = meta.judul.replace(/[^a-zA-Z0-9_-]/g, '_');
-      const fileName = `Hasil_Pembahasan_${safeNama}_${meta.nis}_${safeJudul}.pdf`;
+      if (!payload || !payload.paket) {
+        alert('Data hasil latihan belum tersedia untuk diunduh.');
+        return;
+      }
 
-      if (typeof html2pdf !== 'undefined') {
-        const btn = document.getElementById('btnDownloadCbtPdf');
-        const origText = btn ? btn.textContent : '';
-        if (btn && !silentMode) {
-          btn.disabled = true;
-          btn.textContent = 'Menyiapkan Dokumen PDF...';
-        }
+      const {
+        student, paket, durasiTeks, jumlahPelanggaran,
+        benar, total, skor, predikat, teksDikuasai, teksPerbaikan, hasilEvaluasi
+      } = payload;
 
-        // Buat wadah kloning bersih di pojok kiri atas (x:0, y:0) agar html2canvas tidak menangkap viewport kosong
-        const cloneStage = document.createElement('div');
-        cloneStage.style.position = 'absolute';
-        cloneStage.style.top = '0';
-        cloneStage.style.left = '0';
-        cloneStage.style.width = '760px';
-        cloneStage.style.background = '#FFFFFF';
-        cloneStage.style.padding = '24px';
-        cloneStage.style.zIndex = '-1';
-        cloneStage.style.color = '#0F172A';
-        cloneStage.style.fontFamily = "'Plus Jakarta Sans', sans-serif";
+      const safeNama = String(student.nama || 'Siswa').replace(/[^a-zA-Z0-9_-]/g, '_');
+      const safeJudul = String(paket.judul || 'Latihan_TKA').replace(/[^a-zA-Z0-9_-]/g, '_');
+      const fileName = `Hasil_Pembahasan_${safeNama}_${student.nis || '000'}_${safeJudul}.pdf`;
 
-        const clonedContent = sourceEl.cloneNode(true);
-        clonedContent.querySelectorAll('[data-html2canvas-ignore="true"], .no-print').forEach(el => el.remove());
+      const jsPDFConstructor = (window.jspdf && window.jspdf.jsPDF) || window.jsPDF;
+      if (!jsPDFConstructor) {
+        window.print();
+        return;
+      }
 
-        // Kop Resmi Sekolah di bagian atas PDF
-        const kopHtml = `
-          <div style="border-bottom:2.5px solid #0B4D3B; padding-bottom:12px; margin-bottom:16px;">
-            <div style="font-size:15px; font-weight:800; color:#0B4D3B; text-transform:uppercase;">
-              SMP Al-Irsyad Surabaya
-            </div>
-            <div style="font-size:11.5px; color:#475569;">
-              Sekolah Islam dengan Pendidikan Holistik Qur'ani • Laporan Hasil &amp; Pembahasan Latihan Mandiri TKA
-            </div>
-          </div>
-        `;
+      const btn = document.getElementById('btnDownloadCbtPdf');
+      const origText = btn ? btn.textContent : '';
+      if (btn && !silentMode) {
+        btn.disabled = true;
+        btn.textContent = 'Membuat File PDF...';
+      }
 
-        cloneStage.innerHTML = kopHtml;
-        cloneStage.appendChild(clonedContent);
-        document.body.appendChild(cloneStage);
+      try {
+        const doc = new jsPDFConstructor({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+        const pageW = doc.internal.pageSize.getWidth();
+        const pageH = doc.internal.pageSize.getHeight();
+        const margin = 15;
+        const maxW = pageW - margin * 2;
+        let y = 16;
 
-        const opt = {
-          margin:       [10, 10, 12, 10],
-          filename:     fileName,
-          image:        { type: 'jpeg', quality: 0.96 },
-          html2canvas:  {
-            scale: 2,
-            useCORS: true,
-            logging: false,
-            scrollX: 0,
-            scrollY: 0,
-            windowWidth: 800
-          },
-          jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
-          pagebreak:    { mode: ['css', 'legacy'] }
+        const cleanStr = (txt) => String(txt || '-').replace(/\r?\n+/g, ' ').trim();
+
+        const checkNewPage = (neededH) => {
+          if (y + neededH > pageH - 16) {
+            doc.addPage();
+            y = 16;
+          }
         };
 
-        setTimeout(() => {
-          html2pdf().set(opt).from(cloneStage).save().then(() => {
-            if (cloneStage.parentNode) cloneStage.parentNode.removeChild(cloneStage);
-            if (btn && !silentMode) {
-              btn.disabled = false;
-              btn.textContent = origText;
-            }
-          }).catch(() => {
-            if (cloneStage.parentNode) cloneStage.parentNode.removeChild(cloneStage);
-            if (btn && !silentMode) {
-              btn.disabled = false;
-              btn.textContent = origText;
-            }
-            window.print();
+        const writeWrapped = (text, fontSize, style, colorRgb, lineHeight = 5) => {
+          doc.setFont('helvetica', style || 'normal');
+          doc.setFontSize(fontSize || 10);
+          doc.setTextColor(colorRgb[0], colorRgb[1], colorRgb[2]);
+          const lines = doc.splitTextToSize(String(text || '-'), maxW);
+          lines.forEach((line) => {
+            checkNewPage(lineHeight + 1);
+            doc.text(line, margin, y);
+            y += lineHeight;
           });
-        }, 150);
-      } else {
-        window.print();
+        };
+
+        // Kop Sekolah
+        writeWrapped('SMP AL-IRSYAD SURABAYA', 14, 'bold', [11, 77, 59], 6);
+        writeWrapped("Sekolah Islam dengan Pendidikan Holistik Qur'ani", 9.5, 'normal', [71, 85, 105], 4.5);
+        writeWrapped('LAPORAN HASIL & PEMBAHASAN LATIHAN MANDIRI TKA', 11, 'bold', [15, 23, 42], 6);
+        doc.setDrawColor(11, 77, 59);
+        doc.setLineWidth(0.7);
+        doc.line(margin, y, pageW - margin, y);
+        y += 6;
+
+        // Identitas & Ringkasan Skor
+        writeWrapped(`Nama Peserta      : ${cleanStr(student.nama)} (NIS: ${cleanStr(student.nis)})`, 10, 'normal', [15, 23, 42], 5.2);
+        writeWrapped(`Paket Latihan     : ${cleanStr(paket.judul)} (${cleanStr(paket.mapel)})`, 10, 'normal', [15, 23, 42], 5.2);
+        writeWrapped(`Lama Pengerjaan   : ${cleanStr(durasiTeks)} | Catatan Pengawas: ${cleanStr(jumlahPelanggaran)}`, 10, 'normal', [15, 23, 42], 5.2);
+        writeWrapped(`Skor Akhir        : ${skor} / 100 (${benar} benar dari ${total} soal) — Predikat: ${cleanStr(predikat)}`, 10.5, 'bold', [11, 77, 59], 6.5);
+
+        // Analisis Penguasaan Materi
+        y += 1.5;
+        writeWrapped('1. BAGIAN MATERI YANG SUDAH DIKUASAI:', 10, 'bold', [5, 150, 105], 5);
+        writeWrapped(cleanStr(teksDikuasai), 9.5, 'normal', [30, 41, 59], 4.8);
+        y += 2;
+        writeWrapped('2. BAGIAN MATERI YANG MASIH BUTUH PERBAIKAN:', 10, 'bold', [217, 119, 6], 5);
+        writeWrapped(cleanStr(teksPerbaikan), 9.5, 'normal', [30, 41, 59], 4.8);
+        y += 4;
+
+        doc.setDrawColor(203, 213, 225);
+        doc.setLineWidth(0.3);
+        doc.line(margin, y, pageW - margin, y);
+        y += 6;
+
+        // Kunci Jawaban & Pembahasan Per Butir Soal
+        writeWrapped('RINCIAN JAWABAN & PEMBAHASAN SOAL', 11, 'bold', [11, 77, 59], 6);
+
+        (paket.soal || []).forEach((s, i) => {
+          const ev = (hasilEvaluasi && hasilEvaluasi[i]) || { isCorrect: false, userText: '-', keyText: '-' };
+          const statusLabel = ev.isCorrect ? '[BENAR]' : '[KURANG TEPAT]';
+          const statusColor = ev.isCorrect ? [5, 150, 105] : [220, 38, 38];
+
+          checkNewPage(22);
+          y += 1.5;
+          writeWrapped(`Soal No. ${i + 1} (${cleanStr(getTipeSoal(s))}) — Materi: ${cleanStr(s.materi || paket.mapel)} ${statusLabel}`, 10, 'bold', statusColor, 5);
+          writeWrapped(`Pertanyaan: ${cleanStr(s.pertanyaan)}`, 9.5, 'normal', [15, 23, 42], 4.6);
+          writeWrapped(`Jawaban Anda: ${cleanStr(ev.userText)}  |  Kunci Jawaban: ${cleanStr(ev.keyText)}`, 9.5, 'bold', [51, 65, 85], 4.8);
+          if (s.pembahasan) {
+            writeWrapped(`Pembahasan: ${cleanStr(s.pembahasan)}`, 9.2, 'italic', [71, 85, 105], 4.6);
+          }
+          y += 2;
+        });
+
+        doc.save(fileName);
+      } finally {
+        if (btn && !silentMode) {
+          btn.disabled = false;
+          btn.textContent = origText;
+        }
       }
     }
 
@@ -4033,6 +4068,7 @@
         nis: student.nis,
         judul: paket.judul || 'Latihan_TKA'
       };
+      appState.cbtLastResultData = payload;
 
       document.getElementById('cbtLobbyWrapper').style.display = 'none';
       document.getElementById('cbtExamWrapper').style.display = 'none';
