@@ -2544,21 +2544,45 @@
     }
 
     async function prefetchPaketLatihan() {
+      if (appState.cbtFetching) return;
+      appState.cbtFetching = true;
+
       const periodeAktif = appState.periode || 'default';
       const cacheKey = `tka_cbt_paket_${periodeAktif}`;
+
       try {
         const url = `${API_URL}?action=latihan_soal&periode=${encodeURIComponent(appState.periode)}`;
         const res = await fetch(url, { method: 'GET', redirect: 'follow' });
         if (!res.ok) return;
         const data = await res.json();
+
         if (data && data.status === 'ok') {
+          const freshPaket = Array.isArray(data.paket) ? data.paket : [];
           appState.cbtLoadedPeriode = appState.periode;
-          appState.cbtPaketList = data.paket || [];
-          try {
-            localStorage.setItem(cacheKey, JSON.stringify(data.paket || []));
-          } catch (e) {}
+          appState.cbtPaketList = freshPaket;
+
+          // Simpan ke localStorage hanya jika daftar paket tidak kosong
+          if (freshPaket.length > 0) {
+            try {
+              localStorage.setItem(cacheKey, JSON.stringify(freshPaket));
+            } catch (e) {}
+          }
+
+          // Jika pengguna sudah terlanjur membuka tab Latihan CBT, langsung tampilkan hasilnya
+          const isCbtTabActive = document.getElementById('tab-latihan').classList.contains('active');
+          const isExamOpen = document.getElementById('cbtExamWrapper').style.display === 'block';
+          const isResultOpen = document.getElementById('cbtResultWrapper').style.display === 'block';
+
+          if (isCbtTabActive && !isExamOpen && !isResultOpen) {
+            document.getElementById('cbtLoader').style.display = 'none';
+            document.getElementById('cbtLobbyWrapper').style.display = 'block';
+            renderDaftarPaketCBT(freshPaket);
+          }
         }
-      } catch (e) {}
+      } catch (e) {
+      } finally {
+        appState.cbtFetching = false;
+      }
     }
 
     async function loadPaketLatihan() {
@@ -2570,7 +2594,7 @@
 
       let hasLocalCache = false;
 
-      // 1. Cek apakah sudah ada di memori sesi atau localStorage
+      // 1. Jika sudah ada di memori sesi (dan tidak kosong), langsung tampilkan
       if (appState.cbtLoadedPeriode === appState.periode && appState.cbtPaketList.length > 0) {
         loader.style.display = 'none';
         lobby.style.display = 'block';
@@ -2578,11 +2602,12 @@
         return;
       }
 
+      // 2. Cek cache localStorage (hanya gunakan jika berisi minimal 1 paket)
       try {
         const rawCache = localStorage.getItem(cacheKey);
         if (rawCache) {
           const parsedPaket = JSON.parse(rawCache);
-          if (Array.isArray(parsedPaket)) {
+          if (Array.isArray(parsedPaket) && parsedPaket.length > 0) {
             loader.style.display = 'none';
             lobby.style.display = 'block';
             renderDaftarPaketCBT(parsedPaket);
@@ -2591,39 +2616,46 @@
         }
       } catch (e) {}
 
-      // Tampilkan spinner hanya jika memori lokal benar-benar kosong
+      // Jika belum ada cache valid, tampilkan spinner sementara menunggu server
       if (!hasLocalCache) {
         loader.style.display = 'block';
         lobby.style.display = 'none';
       }
 
-      // 2. Sinkronisasi paket soal terbaru di latar belakang
+      // 3. Jika proses prefetch sedang berjalan, tunggu prefetch selesai tanpa fetch ganda
+      if (appState.cbtFetching) return;
+
+      appState.cbtFetching = true;
       try {
         const url = `${API_URL}?action=latihan_soal&periode=${encodeURIComponent(appState.periode)}`;
         const res = await fetch(url, { method: 'GET', redirect: 'follow' });
         const data = await res.json();
 
         appState.cbtLoadedPeriode = appState.periode;
-        const freshPaket = data.paket || [];
+        const freshPaket = (data && Array.isArray(data.paket)) ? data.paket : [];
 
         loader.style.display = 'none';
         lobby.style.display = 'block';
 
-        // Perbarui tampilan hanya jika siswa tidak sedang mengerjakan ujian
         const isExamOpen = document.getElementById('cbtExamWrapper').style.display === 'block';
-        if (!isExamOpen) {
+        const isResultOpen = document.getElementById('cbtResultWrapper').style.display === 'block';
+        if (!isExamOpen && !isResultOpen) {
           renderDaftarPaketCBT(freshPaket);
         }
 
-        try {
-          localStorage.setItem(cacheKey, JSON.stringify(freshPaket));
-        } catch (e) {}
+        if (freshPaket.length > 0) {
+          try {
+            localStorage.setItem(cacheKey, JSON.stringify(freshPaket));
+          } catch (e) {}
+        }
       } catch (err) {
         loader.style.display = 'none';
         lobby.style.display = 'block';
         if (!hasLocalCache) {
           container.innerHTML = `<div class="alert alert-danger" style="grid-column:1/-1;">Gagal memuat paket latihan soal. Silakan muat ulang halaman.</div>`;
         }
+      } finally {
+        appState.cbtFetching = false;
       }
     }
     
