@@ -1615,6 +1615,18 @@
           </div>
         </div>
 
+        <!-- ANALISIS PENGUASAAN PER MATERI -->
+        <div class="narasi-grid" style="margin-bottom:18px;">
+          <div class="narasi-box">
+            <h4>Bagian Materi yang Sudah Dikuasai</h4>
+            <p id="cbtResDikuasai">-</p>
+          </div>
+          <div class="narasi-box accent-border">
+            <h4>Bagian Materi yang Masih Butuh Perbaikan</h4>
+            <p id="cbtResPerbaikan">-</p>
+          </div>
+        </div>
+
         <div id="cbtReviewList" style="display:flex; flex-direction:column; gap:14px;"></div>
       </div>
     </section>
@@ -1635,6 +1647,62 @@
       </div>
       <div class="modal-body">
         <iframe id="docModalIframe" src="" title="Pratinjau Dokumen Kisi-Kisi TKA"></iframe>
+      </div>
+    </div>
+  </div>
+<!-- MODAL IDENTITAS SISWA SEBELUM MULAI CBT -->
+  <div id="cbtStartModal" class="modal-backdrop">
+    <div class="modal-box" style="max-width:460px; height:auto;">
+      <div class="modal-header">
+        <div class="modal-title">Identitas Peserta Latihan CBT</div>
+        <button type="button" class="btn btn-ghost-light btn-sm" onclick="closeCbtStartModal()">Batal</button>
+      </div>
+      <div style="padding:22px; background:#FFFFFF;">
+        <p id="cbtStartPaketInfo" style="font-size:13.5px; color:var(--text-muted); margin-bottom:14px;">
+          Masukkan Nama Lengkap dan NIS sebelum memulai latihan mandiri.
+        </p>
+        <form onsubmit="konfirmasiMulaiCBT(event)">
+          <div class="form-group">
+            <label for="cbtInputNama">Nama Lengkap Siswa</label>
+            <input type="text" id="cbtInputNama" class="form-control" placeholder="Contoh: Ahmad Fauzan" required />
+          </div>
+          <div class="form-group">
+            <label for="cbtInputNis">Nomor Induk Siswa (NIS)</label>
+            <input type="text" id="cbtInputNis" class="form-control" placeholder="Contoh: 12345" required />
+          </div>
+          <button type="submit" class="btn btn-primary" style="width:100%;">
+            Mulai Kerjakan Soal Sekarang
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL KIRIM LAPORAN HASIL CBT (EMAIL / WHATSAPP) -->
+  <div id="cbtShareModal" class="modal-backdrop">
+    <div class="modal-box" style="max-width:480px; height:auto;">
+      <div class="modal-header">
+        <div class="modal-title">Kirim Laporan Hasil Latihan</div>
+        <button type="button" class="btn btn-ghost-light btn-sm" onclick="closeCbtShareModal()">Tutup</button>
+      </div>
+      <div style="padding:22px; background:#FFFFFF;">
+        <div class="alert alert-info" style="margin-bottom:14px;" id="cbtShareSummaryText">
+          Hasil latihan berhasil tercatat di database sekolah.
+        </div>
+        <p style="font-size:13.5px; color:var(--text-muted); margin-bottom:16px;">
+          Silakan pilih saluran di bawah ini untuk mengirimkan ringkasan hasil latihan dan analisis materi ke orang tua atau guru:
+        </p>
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          <a id="btnShareWa" href="#" target="_blank" rel="noopener" class="btn btn-primary" style="width:100%; background:#15803D;">
+            Kirim Laporan via WhatsApp
+          </a>
+          <a id="btnShareEmail" href="#" class="btn btn-outline" style="width:100%;">
+            Kirim Laporan via Aplikasi Email
+          </a>
+          <button type="button" class="btn btn-outline" style="width:100%;" onclick="closeCbtShareModal()">
+            Lihat Pembahasan &amp; Analisis di Halaman Ini
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -2660,19 +2728,141 @@
       }
     }
     
+    const CBT_SESSION_STORAGE_KEY = 'tka_active_cbt_session_v1';
+    let pendingPaketIndex = null;
+
+    function shuffleArray(arr) {
+      const copy = [...arr];
+      for (let i = copy.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+      }
+      return copy;
+    }
+
+    function formatDurasiDetik(totalDetik) {
+      const m = Math.floor(totalDetik / 60);
+      const s = totalDetik % 60;
+      if (m > 0 && s > 0) return `${m} menit ${s} detik`;
+      if (m > 0) return `${m} menit`;
+      return `${s} detik`;
+    }
+
+    function saveCbtSessionState() {
+      if (!appState.cbtActivePaket) return;
+      const payload = {
+        periode: appState.periode,
+        student: appState.cbtStudent,
+        paket: appState.cbtActivePaket,
+        currentIdx: appState.cbtCurrentIdx,
+        answers: appState.cbtAnswers,
+        startTimestamp: appState.cbtStartTimestamp,
+        endTimestamp: appState.cbtEndTimestamp
+      };
+      try {
+        localStorage.setItem(CBT_SESSION_STORAGE_KEY, JSON.stringify(payload));
+      } catch (e) {}
+    }
+
+    function clearCbtSessionState() {
+      try {
+        localStorage.removeItem(CBT_SESSION_STORAGE_KEY);
+      } catch (e) {}
+    }
+
+    function restoreCbtSessionIfActive() {
+      try {
+        const raw = localStorage.getItem(CBT_SESSION_STORAGE_KEY);
+        if (!raw) return false;
+        const saved = JSON.parse(raw);
+        if (!saved || !saved.paket || !saved.endTimestamp) return false;
+
+        const remainingSecs = Math.floor((saved.endTimestamp - Date.now()) / 1000);
+        if (remainingSecs <= 0) {
+          clearCbtSessionState();
+          return false;
+        }
+
+        appState.cbtStudent = saved.student || { nama: 'Siswa', nis: '-' };
+        appState.cbtActivePaket = saved.paket;
+        appState.cbtCurrentIdx = saved.currentIdx || 0;
+        appState.cbtAnswers = saved.answers || {};
+        appState.cbtStartTimestamp = saved.startTimestamp || Date.now();
+        appState.cbtEndTimestamp = saved.endTimestamp;
+        appState.cbtSecondsLeft = remainingSecs;
+
+        switchTab('latihan');
+        document.getElementById('cbtLoader').style.display = 'none';
+        document.getElementById('cbtLobbyWrapper').style.display = 'none';
+        document.getElementById('cbtResultWrapper').style.display = 'none';
+        document.getElementById('cbtExamWrapper').style.display = 'block';
+        document.getElementById('cbtExamTitle').textContent =
+          `${saved.paket.judul} (${saved.paket.mapel}) — Peserta: ${appState.cbtStudent.nama} (${appState.cbtStudent.nis})`;
+
+        startTimerCBT();
+        renderSoalCBT();
+        return true;
+      } catch (e) {
+        return false;
+      }
+    }
+
+    // Panggil otomatis saat halaman selesai dimuat agar sesi ujian yang belum habis langsung pulih
+    document.addEventListener('DOMContentLoaded', () => {
+      setTimeout(() => { restoreCbtSessionIfActive(); }, 150);
+    });
+
     function mulaiPaketCBT(idx) {
       const paket = appState.cbtPaketList[idx];
       if (!paket || !paket.soal || !paket.soal.length) return;
 
-      appState.cbtActivePaket = paket;
+      pendingPaketIndex = idx;
+      document.getElementById('cbtStartPaketInfo').innerHTML =
+        `Paket: <strong>${escapeHtml(paket.judul)}</strong> (${paket.jumlah_soal} Soal • ${paket.durasi_menit} Menit).<br>Masukkan Nama Lengkap dan NIS Anda sebelum memulai.`;
+      document.getElementById('cbtStartModal').classList.add('open');
+      setTimeout(() => document.getElementById('cbtInputNama').focus(), 100);
+    }
+
+    function closeCbtStartModal() {
+      document.getElementById('cbtStartModal').classList.remove('open');
+      pendingPaketIndex = null;
+    }
+
+    function konfirmasiMulaiCBT(e) {
+      e.preventDefault();
+      if (pendingPaketIndex === null) return;
+
+      const nama = document.getElementById('cbtInputNama').value.trim();
+      const nis = document.getElementById('cbtInputNis').value.trim();
+      if (!nama || !nis) return;
+
+      const basePaket = appState.cbtPaketList[pendingPaketIndex];
+      closeCbtStartModal();
+
+      // Acak urutan nomor soal setiap kali siswa memulai paket
+      const randomizedPaket = {
+        ...basePaket,
+        soal: shuffleArray(basePaket.soal)
+      };
+
+      const durasiDetik = (Number(basePaket.durasi_menit) || 30) * 60;
+      const now = Date.now();
+
+      appState.cbtStudent = { nama, nis };
+      appState.cbtActivePaket = randomizedPaket;
       appState.cbtCurrentIdx = 0;
       appState.cbtAnswers = {};
-      appState.cbtSecondsLeft = (Number(paket.durasi_menit) || 30) * 60;
+      appState.cbtStartTimestamp = now;
+      appState.cbtEndTimestamp = now + (durasiDetik * 1000);
+      appState.cbtSecondsLeft = durasiDetik;
+
+      saveCbtSessionState();
 
       document.getElementById('cbtLobbyWrapper').style.display = 'none';
       document.getElementById('cbtResultWrapper').style.display = 'none';
       document.getElementById('cbtExamWrapper').style.display = 'block';
-      document.getElementById('cbtExamTitle').textContent = `${paket.judul} (${paket.mapel})`;
+      document.getElementById('cbtExamTitle').textContent =
+        `${randomizedPaket.judul} (${randomizedPaket.mapel}) — Peserta: ${nama} (${nis})`;
 
       startTimerCBT();
       renderSoalCBT();
@@ -2682,202 +2872,27 @@
       if (appState.cbtTimerInterval) clearInterval(appState.cbtTimerInterval);
 
       const updateDisp = () => {
-        const m = Math.floor(appState.cbtSecondsLeft / 60);
-        const s = appState.cbtSecondsLeft % 60;
+        const remaining = Math.max(0, Math.floor((appState.cbtEndTimestamp - Date.now()) / 1000));
+        appState.cbtSecondsLeft = remaining;
+
+        const m = Math.floor(remaining / 60);
+        const s = remaining % 60;
         document.getElementById('cbtTimerDisplay').textContent =
           `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+
+        if (remaining <= 0) {
+          clearInterval(appState.cbtTimerInterval);
+          selesaiUjianCBT(true);
+        }
       };
 
       updateDisp();
-      appState.cbtTimerInterval = setInterval(() => {
-        appState.cbtSecondsLeft--;
-        if (appState.cbtSecondsLeft <= 0) {
-          clearInterval(appState.cbtTimerInterval);
-          selesaiUjianCBT(true);
-          return;
-        }
-        updateDisp();
-      }, 1000);
-    }
-
-    function getTipeSoal(soal) {
-      const t = String(soal.tipe || 'PG').trim().toUpperCase();
-      if (t === 'PGK' || t === 'KOMPLEKS' || t === 'PILIHAN GANDA KOMPLEKS') return 'PGK';
-      if (t === 'BS' || t === 'BENAR SALAH' || t === 'BENAR/SALAH') return 'BS';
-      return 'PG';
-    }
-
-    function getActiveOpsiKeys(soal) {
-      return ['A', 'B', 'C', 'D', 'E'].filter(k => soal.opsi && String(soal.opsi[k] || '').trim() !== '');
-    }
-
-    function isSoalTerjawab(idx) {
-      const paket = appState.cbtActivePaket;
-      const soal = paket.soal[idx];
-      const ans = appState.cbtAnswers[idx];
-      const tipe = getTipeSoal(soal);
-
-      if (tipe === 'PGK') {
-        return Array.isArray(ans) && ans.length > 0;
-      }
-      if (tipe === 'BS') {
-        const keys = getActiveOpsiKeys(soal);
-        return ans && typeof ans === 'object' && keys.every((_, rIdx) => ans[rIdx] === 'B' || ans[rIdx] === 'S');
-      }
-      return typeof ans === 'string' && ans !== '';
-    }
-
-    function evaluasiJawabanSoal(soal, userAns) {
-      const tipe = getTipeSoal(soal);
-      const rawKunci = String(soal.kunci || '').trim().toUpperCase();
-
-      if (tipe === 'PGK') {
-        const keyArr = rawKunci.split(',').map(x => x.trim()).filter(Boolean).sort();
-        const usrArr = Array.isArray(userAns) ? [...userAns].map(x => x.trim().toUpperCase()).sort() : [];
-        const isCorrect = keyArr.length > 0 &&
-          usrArr.length === keyArr.length &&
-          usrArr.every((val, i) => val === keyArr[i]);
-        return {
-          isCorrect,
-          userText: usrArr.length ? usrArr.join(', ') : 'Tidak Dijawab',
-          keyText: keyArr.join(', ')
-        };
-      }
-
-      if (tipe === 'BS') {
-        const keys = getActiveOpsiKeys(soal);
-        const keyArr = rawKunci.split(',').map(x => x.trim()).filter(Boolean);
-        const usrObj = (userAns && typeof userAns === 'object') ? userAns : {};
-        const usrArr = keys.map((_, i) => usrObj[i] || '-');
-        const isCorrect = keyArr.length === keys.length &&
-          keys.every((_, i) => usrObj[i] === keyArr[i]);
-        return {
-          isCorrect,
-          userText: usrArr.every(x => x === '-') ? 'Tidak Dijawab' : usrArr.join(', '),
-          keyText: keyArr.join(', ')
-        };
-      }
-
-      // Default: PG Tunggal
-      const usr = typeof userAns === 'string' ? userAns.trim().toUpperCase() : '';
-      const isCorrect = usr !== '' && usr === rawKunci;
-      return {
-        isCorrect,
-        userText: usr ? `${usr}${soal.opsi[usr] ? ` (${soal.opsi[usr]})` : ''}` : 'Tidak Dijawab',
-        keyText: `${rawKunci}${soal.opsi[rawKunci] ? ` (${soal.opsi[rawKunci]})` : ''}`
-      };
-    }
-
-    function renderSoalCBT() {
-      const paket = appState.cbtActivePaket;
-      const idx = appState.cbtCurrentIdx;
-      const soal = paket.soal[idx];
-      const tipe = getTipeSoal(soal);
-      const opsiKeys = getActiveOpsiKeys(soal);
-
-      document.getElementById('cbtNavNumbers').innerHTML = paket.soal.map((s, i) => {
-        const isAns = isSoalTerjawab(i);
-        const isCurr = i === idx;
-        return `<button class="num-btn ${isAns ? 'answered' : ''} ${isCurr ? 'current' : ''}" onclick="jumpSoal(${i})">${i + 1}</button>`;
-      }).join('');
-
-      const badgeTipeMap = {
-        PG: '<span class="badge badge-neutral">Pilihan Ganda</span>',
-        PGK: '<span class="badge badge-info">Pilihan Ganda Kompleks (Pilih lebih dari satu)</span>',
-        BS: '<span class="badge badge-warning">Pernyataan Benar / Salah</span>'
-      };
-
-      let inputHtml = '';
-
-      if (tipe === 'PGK') {
-        const selectedArr = Array.isArray(appState.cbtAnswers[idx]) ? appState.cbtAnswers[idx] : [];
-        inputHtml = `
-          <div class="opsi-list">
-            ${opsiKeys.map(k => {
-              const isSel = selectedArr.includes(k);
-              return `
-                <div class="opsi-item ${isSel ? 'selected' : ''}" onclick="toggleJawabanPGK('${k}')">
-                  <div class="pgk-check">${isSel ? '✓' : ''}</div>
-                  <div style="font-size:14px; padding-top:2px;"><strong>${k}.</strong> ${escapeHtml(soal.opsi[k])}</div>
-                </div>
-              `;
-            }).join('')}
-          </div>
-        `;
-      } else if (tipe === 'BS') {
-        const selectedObj = (appState.cbtAnswers[idx] && typeof appState.cbtAnswers[idx] === 'object')
-          ? appState.cbtAnswers[idx]
-          : {};
-        inputHtml = `
-          <table class="bs-table">
-            <thead>
-              <tr>
-                <th style="text-align:left;">Pernyataan</th>
-                <th style="text-align:center; width:95px;">Benar</th>
-                <th style="text-align:center; width:95px;">Salah</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${opsiKeys.map((k, rIdx) => {
-                const val = selectedObj[rIdx] || '';
-                return `
-                  <tr>
-                    <td>${escapeHtml(soal.opsi[k])}</td>
-                    <td class="bs-choice-cell">
-                      <button type="button" class="bs-pill-btn ${val === 'B' ? 'active-b' : ''}" onclick="pilihJawabanBS(${rIdx}, 'B')">Benar</button>
-                    </td>
-                    <td class="bs-choice-cell">
-                      <button type="button" class="bs-pill-btn ${val === 'S' ? 'active-s' : ''}" onclick="pilihJawabanBS(${rIdx}, 'S')">Salah</button>
-                    </td>
-                  </tr>
-                `;
-              }).join('')}
-            </tbody>
-          </table>
-        `;
-      } else {
-        const selectedKey = typeof appState.cbtAnswers[idx] === 'string' ? appState.cbtAnswers[idx] : '';
-        inputHtml = `
-          <div class="opsi-list">
-            ${opsiKeys.map(k => {
-              const isSel = selectedKey === k;
-              return `
-                <div class="opsi-item ${isSel ? 'selected' : ''}" onclick="pilihJawabanPG('${k}')">
-                  <div class="opsi-key">${k}</div>
-                  <div style="font-size:14px; padding-top:2px;">${escapeHtml(soal.opsi[k])}</div>
-                </div>
-              `;
-            }).join('')}
-          </div>
-        `;
-      }
-
-      document.getElementById('cbtQuestionArea').innerHTML = `
-        <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap; margin-bottom:10px;">
-          <div style="font-size:13px; font-weight:700; color:var(--primary);">
-            Soal Nomor ${idx + 1} dari ${paket.soal.length}
-          </div>
-          ${badgeTipeMap[tipe]}
-        </div>
-        ${soal.stimulus ? `<div class="stimulus-box">${escapeHtml(soal.stimulus)}</div>` : ''}
-        ${soal.gambar_url ? `<div style="margin-bottom:14px;"><img src="${escapeHtml(soal.gambar_url)}" alt="Ilustrasi Soal" style="max-width:100%; max-height:320px; border-radius:10px; border:1px solid var(--border);" /></div>` : ''}
-        <div style="font-size:15px; font-weight:600; color:var(--text);">${escapeHtml(soal.pertanyaan)}</div>
-        ${inputHtml}
-      `;
-
-      document.getElementById('btnPrevSoal').disabled = idx === 0;
-      const btnNext = document.getElementById('btnNextSoal');
-      if (idx === paket.soal.length - 1) {
-        btnNext.textContent = 'Selesai & Kumpulkan';
-        btnNext.onclick = () => selesaiUjianCBT(false);
-      } else {
-        btnNext.textContent = 'Berikutnya →';
-        btnNext.onclick = () => navSoal(1);
-      }
+      appState.cbtTimerInterval = setInterval(updateDisp, 1000);
     }
 
     function pilihJawabanPG(key) {
       appState.cbtAnswers[appState.cbtCurrentIdx] = key;
+      saveCbtSessionState();
       renderSoalCBT();
     }
 
@@ -2888,6 +2903,7 @@
       if (pos >= 0) curr.splice(pos, 1);
       else curr.push(key);
       appState.cbtAnswers[idx] = curr;
+      saveCbtSessionState();
       renderSoalCBT();
     }
 
@@ -2898,6 +2914,7 @@
         : {};
       curr[rowIdx] = val;
       appState.cbtAnswers[idx] = curr;
+      saveCbtSessionState();
       renderSoalCBT();
     }
 
@@ -2905,52 +2922,100 @@
       const next = appState.cbtCurrentIdx + step;
       if (next >= 0 && next < appState.cbtActivePaket.soal.length) {
         appState.cbtCurrentIdx = next;
+        saveCbtSessionState();
         renderSoalCBT();
       }
     }
 
     function jumpSoal(idx) {
       appState.cbtCurrentIdx = idx;
+      saveCbtSessionState();
       renderSoalCBT();
+    }
+
+    function closeCbtShareModal() {
+      document.getElementById('cbtShareModal').classList.remove('open');
     }
 
     function selesaiUjianCBT(isTimeUp) {
       const paket = appState.cbtActivePaket;
+      const student = appState.cbtStudent || { nama: 'Siswa', nis: '-' };
+
       if (!isTimeUp) {
         let terjawab = 0;
         paket.soal.forEach((_, i) => { if (isSoalTerjawab(i)) terjawab++; });
-        const konfirmasi = confirm(`Anda telah menjawab lengkap ${terjawab} dari ${paket.soal.length} soal. Yakin ingin mengakhiri latihan dan melihat pembahasan?`);
+        const konfirmasi = confirm(
+          `Halo ${student.nama} (NIS: ${student.nis}), Anda telah menjawab ${terjawab} dari ${paket.soal.length} soal.\n\nApakah Anda yakin akan mengumpulkan jawaban sekarang?`
+        );
         if (!konfirmasi) return;
       }
 
       if (appState.cbtTimerInterval) clearInterval(appState.cbtTimerInterval);
 
+      const durasiDetikAktual = Math.max(1, Math.round((Date.now() - (appState.cbtStartTimestamp || Date.now())) / 1000));
+      const durasiTeks = formatDurasiDetik(durasiDetikAktual);
+
+      // Hapus sesi aktif karena siswa sudah mengakhiri ujian
+      clearCbtSessionState();
+
       let benar = 0;
+      const rekapMateri = {};
+
       const hasilEvaluasi = paket.soal.map((s, i) => {
         const res = evaluasiJawabanSoal(s, appState.cbtAnswers[i]);
         if (res.isCorrect) benar++;
+
+        const namaMateri = String(s.materi || paket.mapel || 'Materi Umum').trim();
+        if (!rekapMateri[namaMateri]) rekapMateri[namaMateri] = { benar: 0, total: 0 };
+        rekapMateri[namaMateri].total++;
+        if (res.isCorrect) rekapMateri[namaMateri].benar++;
+
         return res;
       });
 
+      const listDikuasai = [];
+      const listPerbaikan = [];
+      Object.keys(rekapMateri).forEach(mat => {
+        const item = rekapMateri[mat];
+        const persen = Math.round((item.benar / item.total) * 100);
+        const label = `${mat} (${item.benar}/${item.total} benar — ${persen}%)`;
+        if (persen >= 65) listDikuasai.push(label);
+        else listPerbaikan.push(label);
+      });
+
+      const teksDikuasai = listDikuasai.length
+        ? listDikuasai.join('; ')
+        : 'Belum ada bagian materi yang mencapai ketuntasan minimal 65%.';
+      const teksPerbaikan = listPerbaikan.length
+        ? listPerbaikan.join('; ')
+        : 'Seluruh bagian materi pada paket ini sudah dikuasai dengan baik.';
+
       const total = paket.soal.length;
       const skor = total > 0 ? Math.round((benar / total) * 100) : 0;
+      const predikat = skor >= 80 ? 'Sangat Baik' : (skor >= 65 ? 'Tuntas Target' : 'Perlu Penguatan');
 
       document.getElementById('cbtExamWrapper').style.display = 'none';
       document.getElementById('cbtResultWrapper').style.display = 'block';
 
-      document.getElementById('cbtResTitle').textContent = `Hasil: ${paket.judul}`;
+      document.getElementById('cbtResTitle').textContent =
+        `Hasil Latihan: ${student.nama} (${student.nis}) — ${paket.judul}`;
       document.getElementById('cbtResSkor').textContent = skor;
       document.getElementById('cbtResBenar').textContent = benar;
-      document.getElementById('cbtResTotalSoal').textContent = `dari ${total} soal`;
-      document.getElementById('cbtResPredikat').textContent =
-        skor >= 80 ? 'Sangat Baik' : (skor >= 65 ? 'Tuntas Target' : 'Perlu Penguatan');
+      document.getElementById('cbtResTotalSoal').textContent = `dari ${total} soal (${durasiTeks})`;
+      document.getElementById('cbtResPredikat').textContent = predikat;
+      document.getElementById('cbtResDikuasai').textContent = teksDikuasai;
+      document.getElementById('cbtResPerbaikan').textContent = teksPerbaikan;
 
       document.getElementById('cbtReviewList').innerHTML = paket.soal.map((s, i) => {
         const ev = hasilEvaluasi[i];
+        const matLabel = escapeHtml(s.materi || paket.mapel || 'Umum');
         return `
           <div style="border:1px solid var(--border); border-left:4px solid ${ev.isCorrect ? 'var(--success)' : 'var(--danger)'}; border-radius:12px; padding:16px; background:#FAFCFB;">
             <div style="display:flex; justify-content:space-between; gap:8px; margin-bottom:8px; flex-wrap:wrap;">
-              <strong>Soal No. ${i + 1} (${escapeHtml(getTipeSoal(s))})</strong>
+              <div>
+                <strong>Soal No. ${i + 1} (${escapeHtml(getTipeSoal(s))})</strong>
+                <span class="badge badge-info" style="margin-left:6px;">Materi: ${matLabel}</span>
+              </div>
               <span class="badge ${ev.isCorrect ? 'badge-success' : 'badge-danger'}">
                 ${ev.isCorrect ? 'Benar' : 'Kurang Tepat'}
               </span>
@@ -2964,6 +3029,60 @@
           </div>
         `;
       }).join('');
+
+      // 1. Kirim otomatis ke Spreadsheet Guru/Wali Kelas (HASIL_LATIHAN_CBT)
+      const saveParams = new URLSearchParams({
+        action: 'simpan_hasil_cbt',
+        periode: appState.periode || '2026-27',
+        nis: student.nis,
+        nama: student.nama,
+        id_paket: paket.id_paket || '-',
+        judul_paket: paket.judul || '-',
+        mapel: paket.mapel || '-',
+        durasi: durasiTeks,
+        benar: String(benar),
+        total_soal: String(total),
+        skor: String(skor),
+        predikat: predikat,
+        dikuasai: teksDikuasai,
+        perbaikan: teksPerbaikan
+      });
+      fetch(`${API_URL}?${saveParams.toString()}`, { method: 'GET', redirect: 'follow' }).catch(() => {});
+
+      // 2. Siapkan pesan laporan untuk WhatsApp & Email lalu tampilkan dialog box
+      const pesanLaporan = [
+        `*LAPORAN HASIL LATIHAN MANDIRI TKA*`,
+        `SMP Al-Irsyad Surabaya`,
+        ``,
+        `Nama Siswa : ${student.nama}`,
+        `NIS : ${student.nis}`,
+        `Paket Soal : ${paket.judul} (${paket.mapel})`,
+        `Lama Pengerjaan : ${durasiTeks}`,
+        `Skor Akhir : ${skor} (${benar}/${total} benar)`,
+        `Predikat : ${predikat}`,
+        ``,
+        `*Materi Dikuasai:*`,
+        `${teksDikuasai}`,
+        ``,
+        `*Materi Perlu Perbaikan:*`,
+        `${teksPerbaikan}`
+      ].join('\n');
+
+      const subjectEmail = encodeURIComponent(`Laporan Latihan TKA - ${student.nama} (${student.nis}) - ${paket.judul}`);
+      const bodyEmail = encodeURIComponent(pesanLaporan.replace(/\*/g, ''));
+      const textWa = encodeURIComponent(pesanLaporan);
+
+      document.getElementById('btnShareWa').href = `https://wa.me/?text=${textWa}`;
+      document.getElementById('btnShareEmail').href = `mailto:?subject=${subjectEmail}&body=${bodyEmail}`;
+      document.getElementById('cbtShareSummaryText').innerHTML =
+        `<strong>${escapeHtml(student.nama)}</strong> (NIS: ${escapeHtml(student.nis)}) — Skor: <strong>${skor}</strong> (${predikat}). Data otomatis tersimpan ke rekap guru.`;
+      document.getElementById('cbtShareModal').classList.add('open');
+    }
+
+    function kembaliKeLobbyCBT() {
+      clearCbtSessionState();
+      document.getElementById('cbtResultWrapper').style.display = 'none';
+      document.getElementById('cbtLobbyWrapper').style.display = 'block';
     }
 
     function kembaliKeLobbyCBT() {
