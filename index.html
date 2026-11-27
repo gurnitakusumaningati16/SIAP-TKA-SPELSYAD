@@ -3752,7 +3752,6 @@ function resolveCbtImageUrl(raw) {
           ${badgeTipeMap[tipe]}
         </div>
         ${soal.stimulus ? `<div class="stimulus-box">${escapeHtml(soal.stimulus)}</div>` : ''}
-        ${soal.stimulus ? `<div class="stimulus-box">${escapeHtml(soal.stimulus)}</div>` : ''}
         ${soal.gambar_url ? (() => {
           const imgSrc = resolveCbtImageUrl(soal.gambar_url);
           const rawIdMatch = String(soal.gambar_url).match(/[-\w]{25,}/);
@@ -4123,19 +4122,17 @@ function resolveCbtImageUrl(raw) {
                 ${ev.isCorrect ? 'Benar' : 'Kurang Tepat'}
               </span>
             </div>
-            function resolveCbtImageUrl(raw) {
-      const val = String(raw || '').trim();
-      if (!val) return '';
-
-      // Ekstrak ID file Google Drive (baik berupa ID mentah 25+ karakter maupun URL drive.google.com)
-      const driveMatch = val.match(/(?:\/d\/|id=|^[-\w]{25,}$)/) ? val.match(/[-\w]{25,}/) : null;
-      if (driveMatch && (val.includes('drive.google.com') || /^[-\w]{25,}$/.test(val))) {
-        const fileId = driveMatch[0];
-        return `https://lh3.googleusercontent.com/d/${fileId}=w1000`;
-      }
-
-      return val;
-    }
+            ${s.gambar_url ? (() => {
+          const imgSrc = resolveCbtImageUrl(s.gambar_url);
+          const rawIdMatch = String(s.gambar_url).match(/[-\w]{25,}/);
+          const fallbackSrc = rawIdMatch ? `https://drive.google.com/thumbnail?id=${rawIdMatch[0]}&sz=w1000` : '';
+          return `<div style="margin-bottom:10px; text-align:center;">
+            <img src="${escapeHtml(imgSrc)}"
+                 onerror="if(this.dataset.retried!=='1' && '${escapeHtml(fallbackSrc)}'){this.dataset.retried='1';this.src='${escapeHtml(fallbackSrc)}';}"
+                 alt="Ilustrasi Soal"
+                 style="max-width:100%; max-height:280px; border-radius:8px; border:1px solid var(--border); background:#FFFFFF;" />
+          </div>`;
+        })() : ''}
             <p style="font-size:14px; margin-bottom:10px;">${escapeHtml(s.pertanyaan)}</p>
             <div style="font-size:13px; margin-bottom:8px;">
               Jawaban Anda: <strong>${escapeHtml(ev.userText)}</strong> &nbsp;|&nbsp;
