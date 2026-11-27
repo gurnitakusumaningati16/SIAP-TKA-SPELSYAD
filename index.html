@@ -4689,11 +4689,23 @@ function resolveCbtImageUrl(raw) {
 
       if (microEntry && microBox) {
         const md = microEntry.p;
+        const bestMd = terbaikMap[md.id_paket];
+        let mdBadgeHtml = `<span class="badge badge-warning" style="margin-left:6px;">Belum Dikerjakan</span>`;
+        if (bestMd !== undefined) {
+          mdBadgeHtml = bestMd >= 65
+            ? `<span class="badge badge-success" style="margin-left:6px;">✓ Tuntas • Terbaik: ${bestMd}</span>`
+            : `<span class="badge badge-warning" style="margin-left:6px;">Skor Terbaik: ${bestMd}</span>`;
+        } else if (appState.auth && appState.auth.role === 'guru') {
+          mdBadgeHtml = `<span class="badge badge-neutral" style="margin-left:6px;">Mode Pratinjau Guru</span>`;
+        }
+
         microBox.style.display = 'flex';
-        document.getElementById('microDrillTitle').textContent = `${md.judul} (${md.mapel})`;
+        document.getElementById('microDrillTitle').innerHTML = `${escapeHtml(md.judul)} (${escapeHtml(md.mapel)}) ${mdBadgeHtml}`;
         document.getElementById('microDrillDesc').textContent =
           `${md.jumlah_soal} Soal Kilat • Waktu Maksimal ${md.durasi_menit} Menit — Selesaikan hari ini untuk menjaga Daily Streak Anda!`;
-        document.getElementById('btnMulaiMicroDrill').onclick = () => mulaiPaketCBT(microEntry.idx);
+        const btnMd = document.getElementById('btnMulaiMicroDrill');
+        btnMd.textContent = bestMd !== undefined ? 'Latih Ulang Tantangan' : 'Mulai Tantangan Hari Ini';
+        btnMd.onclick = () => mulaiPaketCBT(microEntry.idx);
       } else if (microBox) {
         microBox.style.display = 'none';
       }
