@@ -4392,8 +4392,6 @@ function resolveCbtImageUrl(raw) {
           pelanggaran: jumlahPelanggaran,
           soal_salah: daftarKodeSalah.join(';')
         });
-        kirimHasilCbtDenganRetry(saveParams.toString()).then(() => {
-          if (appState.portalUser && appState.portalUser.siswa) {
             kirimHasilCbtDenganRetry(saveParams.toString()).then(() => {
           if (appState.portalUser && appState.portalUser.siswa) {
             loadProgressDanLeaderboardSiswa(appState.portalUser.siswa.nis, appState.portalUser.siswa.nisn);
