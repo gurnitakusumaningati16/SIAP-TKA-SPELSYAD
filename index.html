@@ -1244,6 +1244,85 @@
       border: 1px dashed var(--border);
     }
 
+    /* STREAK, MICRO DRILL & MONITORING GURU */
+    .streak-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%);
+      color: #92400E;
+      border: 1px solid #F59E0B;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .micro-drill-hero {
+      background: linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%);
+      border: 1.5px solid #F59E0B;
+      border-radius: 14px;
+      padding: 18px 20px;
+      margin-bottom: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .sub-pill-bar {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 12px;
+    }
+
+    .sub-pill-btn {
+      background: #F1F5F9;
+      border: 1.5px solid transparent;
+      color: var(--text-muted);
+      padding: 8px 14px;
+      border-radius: 999px;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .sub-pill-btn.active {
+      background: var(--primary-light);
+      border-color: var(--primary);
+      color: var(--primary-dark);
+    }
+
+    .btn-req-guru {
+      background: #FFFBEB;
+      border: 1px solid #FCD34D;
+      color: #92400E;
+      padding: 5px 11px;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .btn-req-guru:hover {
+      background: #FEF3C7;
+    }
+
+    .btn-req-guru.sent {
+      background: var(--success-bg);
+      border-color: var(--success);
+      color: #065F46;
+      cursor: default;
+    }
+
     /* FOOTER */
     footer {
       background: #FFFFFF;
@@ -1363,6 +1442,7 @@
       <div class="topbar-right">
         <div id="activeUserPill" class="user-session-badge" style="display:none;">
           <span id="activeUserLabel">-</span>
+          <span id="topbarStreakBadge" class="streak-pill" style="display:none;">🔥 0 Hari</span>
           <button type="button" onclick="logoutPortal()" style="background:rgba(255,255,255,0.2); border:none; color:#FFFFFF; border-radius:6px; padding:2px 8px; font-size:11px; font-weight:700; cursor:pointer;">
             Keluar
           </button>
@@ -1395,6 +1475,9 @@
       </button>
       <button class="nav-btn" data-tab="latihan" onclick="switchTab('latihan')">
         Latihan Mandiri CBT
+      </button>
+      <button id="navBtnGuru" class="nav-btn" data-tab="guru" style="display:none;" onclick="switchTab('guru')">
+        Monitoring &amp; Pendampingan <span class="nav-pill" style="background:#D1FAE5; color:#065F46;">Guru</span>
       </button>
     </div>
   </nav>
@@ -1574,6 +1657,8 @@
         </div>
       </div>
 
+
+
       <!-- TIMELINE KEGIATAN -->
       <div class="card">
         <div class="card-header">
@@ -1713,6 +1798,33 @@
             </div>
           </div>
         </div>
+        
+       <!-- TOP 10 SISWA PALING RAJIN BERLATIH -->
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Apresiasi Keaktifan: Top 10 Siswa Paling Rajin Berlatih</div>
+            <div class="card-subtitle">Diurutkan berdasarkan konsistensi latihan harian (Daily Streak) &amp; jumlah sesi CBT mandiri</div>
+          </div>
+          <span id="myStreakSummaryBadge" class="streak-pill" style="display:none;">🔥 Streak Anda: 0 Hari</span>
+        </div>
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th style="width:70px;">Peringkat</th>
+                <th>Nama Siswa</th>
+                <th>Kelas</th>
+                <th>Sesi Selesai</th>
+                <th>Daily Streak</th>
+              </tr>
+            </thead>
+            <tbody id="tbodyTop10Rajin">
+              <tr><td colspan="5" style="text-align:center; color:var(--text-soft);">Memuat data keaktifan siswa...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
 
         <!-- HASIL TKA RESMI (JIKA SUDAH ADA) -->
         <div class="card" id="cardHasilTKA" style="display:none;">
@@ -1780,15 +1892,45 @@
         </div>
       </div>
 
-      <!-- DAFTAR PAKET CBT -->
+      <!-- DAFTAR PAKET CBT (MICRO DRILL + REGULER + LATIHAN ULANG SOAL SALAH) -->
       <div id="cbtLobbyWrapper" class="card">
         <div class="card-header">
           <div>
             <div class="card-title">Simulasi Latihan Mandiri Berbasis Komputer (CBT)</div>
-            <div class="card-subtitle">Pilih paket latihan di bawah ini untuk menguji pemahaman beserta skor dan pembahasan instan</div>
+            <div class="card-subtitle">Pilih tantangan kilat harian, paket simulasi lengkap, atau ulangi soal yang pernah salah</div>
           </div>
+          <span id="cbtLobbyStreakBadge" class="streak-pill" style="display:none;">🔥 Streak: 0 Hari</span>
         </div>
-        <div id="paketLatihanContainer" class="resource-grid"></div>
+
+        <!-- BANNER MICRO DRILL HARIAN (MAKS. 7 MENIT) -->
+        <div id="microDrillBannerBox" class="micro-drill-hero" style="display:none;">
+          <div>
+            <span class="badge badge-warning" style="margin-bottom:6px;">⚡ MICRO DRILL HARIAN • MAKS. 7 MENIT</span>
+            <h3 id="microDrillTitle" style="font-size:17px; font-weight:800; color:var(--text); margin-bottom:2px;">-</h3>
+            <p id="microDrillDesc" style="font-size:13px; color:var(--text-muted);">-</p>
+          </div>
+          <button type="button" id="btnMulaiMicroDrill" class="btn btn-accent">
+            Kerjakan Micro Drill Hari Ini
+          </button>
+        </div>
+
+        <!-- SUB-NAVIGASI PILL CBT -->
+        <div class="sub-pill-bar">
+          <button type="button" id="pillCbtReguler" class="sub-pill-btn active" onclick="switchCbtSubTab('reguler')">
+            Paket Latihan CBT
+          </button>
+          <button type="button" id="pillCbtSalah" class="sub-pill-btn" onclick="switchCbtSubTab('salah')">
+            Latihan Ulang Soal Salah (<span id="countSoalSalahBadge">0</span>)
+          </button>
+        </div>
+
+        <div id="cbtSubRegulerPanel">
+          <div id="paketLatihanContainer" class="resource-grid"></div>
+        </div>
+
+        <div id="cbtSubSalahPanel" style="display:none;">
+          <div id="soalSalahContainer"></div>
+        </div>
       </div>
 
       <!-- RUANG UJIAN CBT -->
@@ -1879,6 +2021,107 @@
             <button type="button" class="btn btn-outline" onclick="kembaliKeLobbyCBT()">
               Kerjakan Paket Lain
             </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+<!-- ============================================================
+         TAB 6: MONITORING & PENDAMPINGAN KHUSUS GURU / KURIKULUM
+         ============================================================ -->
+    <section id="tab-guru" class="tab-panel">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Dashboard Monitoring &amp; Pendampingan Siswa (Mode Guru)</div>
+            <div class="card-subtitle">Pantau siswa prioritas pendampingan TO, soal yang paling banyak ditanyakan, dan keaktifan CBT per kelas</div>
+          </div>
+          <button type="button" class="btn btn-outline btn-sm" onclick="loadMonitoringGuruData(true)">
+            Muat Ulang Data
+          </button>
+        </div>
+
+        <div class="sub-pill-bar">
+          <button type="button" id="guruPillPrioritas" class="sub-pill-btn active" onclick="switchGuruSubTab('prioritas')">
+            Prioritas Pendampingan TO (<span id="guruCountPrioritas">0</span>)
+          </button>
+          <button type="button" id="guruPillRequest" class="sub-pill-btn" onclick="switchGuruSubTab('request')">
+            Request Pembahasan Siswa (<span id="guruCountRequest">0</span>)
+          </button>
+          <button type="button" id="guruPillKelas" class="sub-pill-btn" onclick="switchGuruSubTab('kelas')">
+            Rekap CBT Per Kelas
+          </button>
+        </div>
+
+        <!-- SUB-TAB GURU 1: PRIORITAS PENDAMPINGAN TO -->
+        <div id="guruPanelPrioritas">
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:14px; flex-wrap:wrap;">
+            <p style="font-size:13px; color:var(--text-muted);">
+              Menampilkan siswa dengan rata-rata TO terakhir <strong>&lt; 65.00</strong> atau mengalami <strong>penurunan skor 2 kali berturut-turut</strong>.
+            </p>
+            <select id="filterGuruKelasPrioritas" class="form-control" style="width:auto; min-width:160px; padding:8px 12px;" onchange="renderTabelPrioritasGuru()">
+              <option value="ALL">Semua Kelas</option>
+              <option value="IX-A">Kelas IX-A</option>
+              <option value="IX-B">Kelas IX-B</option>
+              <option value="IX-C">Kelas IX-C</option>
+              <option value="IX-D">Kelas IX-D</option>
+            </select>
+          </div>
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>NIS</th>
+                  <th>Nama Siswa</th>
+                  <th>Kelas</th>
+                  <th>Riwayat Nilai TO</th>
+                  <th>Nilai Terakhir</th>
+                  <th>Indikator Pendampingan</th>
+                </tr>
+              </thead>
+              <tbody id="tbodyGuruPrioritas">
+                <tr><td colspan="6" style="text-align:center; color:var(--text-soft);">Memuat data...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- SUB-TAB GURU 2: REQUEST PEMBAHASAN DARI SISWA -->
+        <div id="guruPanelRequest" style="display:none;">
+          <p style="font-size:13px; color:var(--text-muted); margin-bottom:14px;">
+            Daftar butir soal yang diajukan siswa saat mengerjakan CBT, diurutkan dari yang paling banyak dibingungkan.
+          </p>
+          <div id="guruRequestListContainer" style="display:flex; flex-direction:column; gap:12px;"></div>
+        </div>
+
+        <!-- SUB-TAB GURU 3: REKAP KEAKTIFAN CBT PER KELAS -->
+        <div id="guruPanelKelas" style="display:none;">
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:14px; flex-wrap:wrap;">
+            <p style="font-size:13px; color:var(--text-muted);">
+              Rekapitulasi jumlah sesi latihan mandiri, Daily Streak, dan paket yang telah dikerjakan siswa per rombel.
+            </p>
+            <select id="filterGuruKelasRekap" class="form-control" style="width:auto; min-width:160px; padding:8px 12px;" onchange="renderTabelRekapKelasGuru()">
+              <option value="IX-A">Kelas IX-A</option>
+              <option value="IX-B">Kelas IX-B</option>
+              <option value="IX-C">Kelas IX-C</option>
+              <option value="IX-D">Kelas IX-D</option>
+            </select>
+          </div>
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>Nama Siswa</th>
+                  <th>Total Sesi</th>
+                  <th>Daily Streak</th>
+                  <th>Rata-Rata Skor</th>
+                  <th>Paket yang Sudah Dikerjakan</th>
+                </tr>
+              </thead>
+              <tbody id="tbodyGuruRekapKelas">
+                <tr><td colspan="5" style="text-align:center; color:var(--text-soft);">Memuat data...</td></tr>
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
@@ -2189,21 +2432,27 @@
 
       const pill = document.getElementById('activeUserPill');
       const label = document.getElementById('activeUserLabel');
+      const navGuru = document.getElementById('navBtnGuru');
       pill.style.display = 'inline-flex';
 
       if (sessionData.role === 'siswa' && sessionData.siswa) {
         const s = sessionData.siswa;
         label.textContent = `${s.nama} (${s.rombel})`;
+        if (navGuru) navGuru.style.display = 'none';
 
-        // Otomatis isi & kunci form Laporan Siswa untuk wali murid
         document.getElementById('inputNis').value = s.nis;
         document.getElementById('inputNisn').value = s.nisn;
         document.getElementById('btnCekSiswaLain').style.display = 'none';
         sessionStorage.setItem('tka_siswa_auth', JSON.stringify({ nis: s.nis, nisn: s.nisn }));
         fetchLaporanSiswa(s.nis, s.nisn, true);
+        loadProgressDanLeaderboardSiswa(s.nis, s.nisn);
       } else {
         label.textContent = 'Mode Guru / Kurikulum';
+        if (navGuru) navGuru.style.display = 'inline-flex';
+        document.getElementById('topbarStreakBadge').style.display = 'none';
         document.getElementById('btnCekSiswaLain').style.display = 'inline-flex';
+        loadProgressDanLeaderboardSiswa('', '');
+        loadMonitoringGuruData(false);
       }
 
       if (isFreshLogin) {
@@ -2219,7 +2468,11 @@
       } catch (e) {}
 
       appState.portalUser = null;
+      appState.siswaProgress = null;
       document.getElementById('activeUserPill').style.display = 'none';
+      document.getElementById('topbarStreakBadge').style.display = 'none';
+      const navGuru = document.getElementById('navBtnGuru');
+      if (navGuru) navGuru.style.display = 'none';
       document.getElementById('gkInputNisn').value = '';
       document.getElementById('gkInputPasscode').value = '';
       document.getElementById('gkError').style.display = 'none';
@@ -2227,7 +2480,6 @@
       switchTab('beranda');
       document.getElementById('gatekeeperModal').classList.add('open');
     }
-
     /* =====================================================================
        PEMUATAN DATA UTAMA PORTAL
        ===================================================================== */
@@ -2882,6 +3134,31 @@
           }
         }
       });
+
+      // Render Riwayat Latihan Mandiri CBT Ananda (Untuk Orang Tua)
+      const cbtProg = data.cbt_progress || {};
+      const rCbtList = cbtProg.riwayat_cbt || [];
+      const streakVal = cbtProg.streak || 0;
+      const repStreakEl = document.getElementById('laporanStreakBadge');
+      if (repStreakEl) repStreakEl.textContent = `🔥 Streak: ${streakVal} Hari`;
+
+      const tbodyCbt = document.getElementById('tbodyRiwayatCbtSiswa');
+      if (tbodyCbt) {
+        if (!rCbtList.length) {
+          tbodyCbt.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--text-soft);">Ananda belum mengerjakan paket latihan mandiri CBT pada periode ini.</td></tr>`;
+        } else {
+          tbodyCbt.innerHTML = rCbtList.map(item => `
+            <tr>
+              <td>${escapeHtml(item.tanggal)}</td>
+              <td><strong>${escapeHtml(item.judul_paket)}</strong></td>
+              <td><span class="badge badge-info">${escapeHtml(item.mapel)}</span></td>
+              <td>${escapeHtml(item.durasi)}</td>
+              <td><strong>${item.skor}</strong> (${item.benar}/${item.total_soal})</td>
+              <td><span class="badge ${item.skor >= 65 ? 'badge-success' : 'badge-warning'}">${escapeHtml(item.predikat)}</span></td>
+            </tr>
+          `).join('');
+        }
+      }
 
       const cardTKA = document.getElementById('cardHasilTKA');
       const kontenTKA = document.getElementById('kontenHasilTKA');
@@ -4006,9 +4283,16 @@ function resolveCbtImageUrl(raw) {
       let benar = 0;
       const rekapMateri = {};
 
+      const daftarKodeSalah = [];
       const hasilEvaluasi = paket.soal.map((s, i) => {
         const res = evaluasiJawabanSoal(s, appState.cbtAnswers[i]);
-        if (res.isCorrect) benar++;
+        if (res.isCorrect) {
+          benar++;
+        } else {
+          const pktId = s.source_paket_id || paket.id_paket || 'PKT';
+          const noAsli = s.no_soal_asli || (i + 1);
+          daftarKodeSalah.push(`${pktId}:${noAsli}`);
+        }
 
         const namaMateri = String(s.materi || paket.mapel || 'Materi Umum').trim();
         if (!rekapMateri[namaMateri]) rekapMateri[namaMateri] = { benar: 0, total: 0 };
@@ -4054,7 +4338,6 @@ function resolveCbtImageUrl(raw) {
         waktuSelesai: new Date().toLocaleString('id-ID')
       };
 
-      // Simpan riwayat hasil terakhir di perangkat agar bisa dibuka kembali kapan saja
       try {
         localStorage.setItem(CBT_LAST_RESULT_STORAGE_KEY, JSON.stringify(resultPayload));
       } catch (e) {}
@@ -4078,11 +4361,15 @@ function resolveCbtImageUrl(raw) {
           predikat: predikat,
           dikuasai: teksDikuasai,
           perbaikan: teksPerbaikan,
-          pelanggaran: jumlahPelanggaran
+          pelanggaran: jumlahPelanggaran,
+          soal_salah: daftarKodeSalah.join(';')
         });
-        kirimHasilCbtDenganRetry(saveParams.toString());
+        kirimHasilCbtDenganRetry(saveParams.toString()).then(() => {
+          if (appState.portalUser && appState.portalUser.siswa) {
+            loadProgressDanLeaderboardSiswa(appState.portalUser.siswa.nis, appState.portalUser.siswa.nisn);
+          }
+        });
       }
-    }
 
     function renderHasilDanPembahasanCBT(payload, showModal) {
       const {
@@ -4141,8 +4428,13 @@ function resolveCbtImageUrl(raw) {
               Jawaban Anda: <strong>${escapeHtml(ev.userText)}</strong> &nbsp;|&nbsp;
               Kunci Jawaban: <strong style="color:var(--success);">${escapeHtml(ev.keyText)}</strong>
             </div>
-            ${s.pembahasan ? `<div style="background:#FFFFFF; border:1px solid var(--border); padding:10px 12px; border-radius:8px; font-size:13px; color:var(--text-muted);"><strong>Pembahasan:</strong> ${escapeHtml(s.pembahasan)}</div>` : ''}
-          </div>
+            ${s.pembahasan ? `<div style="background:#FFFFFF; border:1px solid var(--border); padding:10px 12px; border-radius:8px; font-size:13px; color:var(--text-muted); margin-bottom:10px;"><strong>Pembahasan:</strong> ${escapeHtml(s.pembahasan)}</div>` : ''}
+            <div style="display:flex; justify-content:flex-end;" data-html2canvas-ignore="true">
+              <button type="button" class="btn-req-guru"
+                onclick="ajukanPembahasanKeGuru(this, '${escapeHtml(s.source_paket_id || paket.id_paket || '-')}', '${escapeHtml(paket.judul || '-')}', '${s.no_soal_asli || (i + 1)}', '${matLabel}', '${escapeHtml(String(s.pertanyaan || '').substring(0, 160))}')">
+                ? Masih bingung soal ini? Ajukan ke Guru
+              </button>
+            </div>
         `;
       }).join('');
 
@@ -4232,6 +4524,400 @@ function resolveCbtImageUrl(raw) {
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#39;');
+    }
+    /* =====================================================================
+       PENGENDALI FITUR TAHAP 2: STREAK, MICRO DRILL, BANK SALAH & PANEL GURU
+       ===================================================================== */
+    async function loadProgressDanLeaderboardSiswa(nis, nisn) {
+      try {
+        const params = new URLSearchParams({
+          action: 'progress_siswa',
+          periode: appState.periode || '2026-27',
+          nis: nis || '',
+          nisn: nisn || ''
+        });
+        const res = await fetch(`${API_URL}?${params.toString()}`, { method: 'GET', redirect: 'follow' });
+        const data = await res.json();
+        if (data.status !== 'ok') return;
+
+        appState.siswaProgress = data;
+
+        // 1. Update Lencana Streak di Topbar, Beranda & Lobi CBT
+        const streak = data.streak || 0;
+        const isSiswa = appState.portalUser && appState.portalUser.role === 'siswa';
+
+        const topStreak = document.getElementById('topbarStreakBadge');
+        const myStreak = document.getElementById('myStreakSummaryBadge');
+        const lobbyStreak = document.getElementById('cbtLobbyStreakBadge');
+
+        if (isSiswa) {
+          if (topStreak) { topStreak.style.display = 'inline-flex'; topStreak.textContent = `🔥 ${streak} Hari`; }
+          if (myStreak) { myStreak.style.display = 'inline-flex'; myStreak.textContent = `🔥 Streak Anda: ${streak} Hari (${data.total_sesi || 0} Sesi)`; }
+          if (lobbyStreak) { lobbyStreak.style.display = 'inline-flex'; lobbyStreak.textContent = `🔥 Streak: ${streak} Hari`; }
+        }
+
+        // 2. Render Tabel Top 10 Siswa Paling Rajin Berlatih
+        const tbodyTop = document.getElementById('tbodyTop10Rajin');
+        const topList = data.top_10_rajin || [];
+        if (tbodyTop) {
+          if (!topList.length) {
+            tbodyTop.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--text-soft);">Belum ada catatan latihan CBT pada periode ini.</td></tr>`;
+          } else {
+            const medals = ['🥇', '🥈', '🥉'];
+            tbodyTop.innerHTML = topList.map((row, idx) => `
+              <tr>
+                <td><strong>${medals[idx] || `#${idx + 1}`}</strong></td>
+                <td><strong>${escapeHtml(row.nama)}</strong></td>
+                <td><span class="badge badge-neutral">${escapeHtml(row.rombel)}</span></td>
+                <td>${row.total_sesi} Sesi</td>
+                <td><span class="streak-pill">🔥 ${row.streak} Hari</span></td>
+              </tr>
+            `).join('');
+          }
+        }
+
+        // 3. Perbarui Tampilan Lobi CBT (Status Skor Terbaik, Micro Drill & Soal Salah)
+        if (appState.cbtPaketList && appState.cbtPaketList.length) {
+          renderDaftarPaketCBT(appState.cbtPaketList);
+        }
+        renderPanelLatihanUlangSoalSalah();
+      } catch (e) {}
+    }
+
+    // Override renderDaftarPaketCBT agar mendukung Micro Drill Harian & Lencana Skor Terbaik
+    const _origRenderDaftarPaketCBT = renderDaftarPaketCBT;
+    renderDaftarPaketCBT = function(paketList) {
+      appState.cbtPaketList = paketList || [];
+      const container = document.getElementById('paketLatihanContainer');
+      const microBox = document.getElementById('microDrillBannerBox');
+      const prog = appState.siswaProgress || {};
+      const terbaikMap = prog.paket_terbaik || {};
+
+      // Cari paket Micro Drill (hari ini atau terbaru)
+      const todayIso = new Date().toISOString().slice(0, 10);
+      let microIdx = appState.cbtPaketList.findIndex(p =>
+        String(p.jenis_paket || '').toUpperCase() === 'MICRO_DRILL' &&
+        String(p.tanggal_tayang || '').startsWith(todayIso)
+      );
+      if (microIdx === -1) {
+        microIdx = appState.cbtPaketList.findIndex(p => String(p.jenis_paket || '').toUpperCase() === 'MICRO_DRILL');
+      }
+
+      if (microIdx !== -1 && microBox) {
+        const md = appState.cbtPaketList[microIdx];
+        microBox.style.display = 'flex';
+        document.getElementById('microDrillTitle').textContent = `${md.judul} (${md.mapel})`;
+        document.getElementById('microDrillDesc').textContent =
+          `${md.jumlah_soal} Soal Kilat • Waktu Maksimal ${md.durasi_menit} Menit — Selesaikan hari ini untuk menjaga Daily Streak Anda!`;
+        document.getElementById('btnMulaiMicroDrill').onclick = () => mulaiPaketCBT(microIdx);
+      } else if (microBox) {
+        microBox.style.display = 'none';
+      }
+
+      const regulerItems = appState.cbtPaketList
+        .map((p, idx) => ({ p, idx }))
+        .filter(({ p }) => String(p.jenis_paket || 'REGULER').toUpperCase() !== 'MICRO_DRILL');
+
+      if (!regulerItems.length) {
+        container.innerHTML = `<div class="empty-state" style="grid-column:1/-1;">Belum ada paket latihan CBT reguler yang aktif pada periode ini.</div>`;
+        return;
+      }
+
+      container.innerHTML = regulerItems.map(({ p, idx }) => {
+        const bestScore = terbaikMap[p.id_paket];
+        let statusBadge = `<span class="badge badge-neutral">Belum Dikerjakan</span>`;
+        if (bestScore !== undefined) {
+          statusBadge = bestScore >= 65
+            ? `<span class="badge badge-success">✓ Tuntas • Terbaik: ${bestScore}</span>`
+            : `<span class="badge badge-warning">Skor Terbaik: ${bestScore}</span>`;
+        }
+
+        return `
+          <div class="resource-card">
+            <div>
+              <div style="display:flex; justify-content:space-between; align-items:center; gap:6px; margin-bottom:8px; flex-wrap:wrap;">
+                <span class="badge badge-info">${escapeHtml(p.mapel)}</span>
+                ${statusBadge}
+              </div>
+              <h3 style="font-size:16px; font-weight:700; margin-bottom:4px;">${escapeHtml(p.judul)}</h3>
+              <p style="font-size:13px; color:var(--text-soft);">Jumlah Butir Soal: <strong>${p.jumlah_soal} Soal</strong> • Durasi: <strong>${p.durasi_menit} Menit</strong></p>
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="mulaiPaketCBT(${idx})" ${p.jumlah_soal === 0 ? 'disabled' : ''}>
+              ${p.jumlah_soal > 0 ? (bestScore !== undefined ? 'Latih Ulang Paket' : 'Mulai Latihan Sekarang') : 'Soal Belum Tersedia'}
+            </button>
+          </div>
+        `;
+      }).join('');
+    };
+
+    function switchCbtSubTab(subName) {
+      const isReg = subName === 'reguler';
+      document.getElementById('pillCbtReguler').classList.toggle('active', isReg);
+      document.getElementById('pillCbtSalah').classList.toggle('active', !isReg);
+      document.getElementById('cbtSubRegulerPanel').style.display = isReg ? 'block' : 'none';
+      document.getElementById('cbtSubSalahPanel').style.display = isReg ? 'none' : 'block';
+      if (!isReg) renderPanelLatihanUlangSoalSalah();
+    }
+
+    function kumpulkanButirSoalSalahSiswa() {
+      const kodeList = (appState.siswaProgress && appState.siswaProgress.soal_salah) || [];
+      if (!kodeList.length || !appState.cbtPaketList.length) return [];
+
+      const hasilKumpulan = [];
+      const seenKeys = new Set();
+
+      kodeList.forEach(kode => {
+        const parts = String(kode).split(':');
+        if (parts.length < 2) return;
+        const idPkt = parts[0].trim();
+        const noSoal = parseInt(parts[1].trim(), 10);
+        if (!idPkt || isNaN(noSoal) || seenKeys.has(kode)) return;
+
+        const pkt = appState.cbtPaketList.find(x => String(x.id_paket).trim() === idPkt);
+        if (pkt && Array.isArray(pkt.soal) && pkt.soal[noSoal - 1]) {
+          seenKeys.add(kode);
+          hasilKumpulan.push({
+            ...pkt.soal[noSoal - 1],
+            source_paket_id: idPkt,
+            no_soal_asli: noSoal
+          });
+        }
+      });
+
+      return hasilKumpulan;
+    }
+
+    function renderPanelLatihanUlangSoalSalah() {
+      const daftarSoal = kumpulkanButirSoalSalahSiswa();
+      const badgeEl = document.getElementById('countSoalSalahBadge');
+      if (badgeEl) badgeEl.textContent = daftarSoal.length;
+
+      const panel = document.getElementById('soalSalahContainer');
+      if (!panel) return;
+
+      if (!daftarSoal.length) {
+        panel.innerHTML = `<div class="empty-state">Bagus sekali! Saat ini tidak ada catatan soal salah yang perlu diulang.</div>`;
+        return;
+      }
+
+      panel.innerHTML = `
+        <div style="background:#FFFBEB; border:1px solid #FDE68A; border-radius:12px; padding:16px; margin-bottom:14px; display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
+          <div>
+            <div style="font-size:15px; font-weight:800; color:#92400E;">Ditemukan ${daftarSoal.length} Butir Soal yang Perlu Dikuasai Kembali</div>
+            <div style="font-size:13px; color:#78350F;">Sistem telah merakit seluruh soal yang pernah salah menjadi 1 sesi latihan perbaikan khusus untuk Anda.</div>
+          </div>
+          <button type="button" class="btn btn-primary" onclick="mulaiSesiLatihanUlangSoalSalah()">
+            Mulai Latihan Perbaikan (${daftarSoal.length} Soal)
+          </button>
+        </div>
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>No</th>
+                <th>Asal Paket</th>
+                <th>Materi</th>
+                <th>Cuplikan Pertanyaan</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${daftarSoal.map((s, idx) => `
+                <tr>
+                  <td><strong>${idx + 1}</strong></td>
+                  <td><span class="badge badge-info">${escapeHtml(s.source_paket_id)} #${s.no_soal_asli}</span></td>
+                  <td>${escapeHtml(s.materi || '-')}</td>
+                  <td>${escapeHtml(String(s.pertanyaan || '').substring(0, 110))}...</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    function mulaiSesiLatihanUlangSoalSalah() {
+      const daftarSoal = kumpulkanButirSoalSalahSiswa();
+      if (!daftarSoal.length) return;
+
+      const paketRemedial = {
+        id_paket: 'REMEDIAL-PRIBADI',
+        judul: 'Latihan Ulang Soal Salah Pribadi',
+        mapel: 'Campuran Materi Perbaikan',
+        durasi_menit: Math.max(5, daftarSoal.length * 2),
+        jumlah_soal: daftarSoal.length,
+        soal: daftarSoal
+      };
+
+      appState.cbtPaketList.push(paketRemedial);
+      mulaiPaketCBT(appState.cbtPaketList.length - 1);
+    }
+
+    async function ajukanPembahasanKeGuru(btnEl, idPaket, judulPaket, noSoal, materi, cuplikan) {
+      if (btnEl.classList.contains('sent')) return;
+      btnEl.disabled = true;
+      btnEl.textContent = 'Mengirim ke Guru...';
+
+      const user = appState.portalUser || {};
+      const siswa = user.siswa || appState.cbtStudent || {};
+
+      try {
+        const params = new URLSearchParams({
+          action: 'request_pembahasan',
+          periode: appState.periode || '2026-27',
+          nisn: siswa.nisn || '-',
+          nama: siswa.nama || 'Siswa',
+          rombel: siswa.rombel || '-',
+          id_paket: idPaket,
+          judul_paket: judulPaket,
+          no_soal: String(noSoal),
+          materi: materi,
+          cuplikan: cuplikan
+        });
+        await fetch(`${API_URL}?${params.toString()}`, { method: 'GET', redirect: 'follow' });
+        btnEl.classList.add('sent');
+        btnEl.textContent = '✓ Berhasil Diajukan ke Guru';
+      } catch (e) {
+        btnEl.disabled = false;
+        btnEl.textContent = '? Masih bingung soal ini? Ajukan ke Guru';
+      }
+    }
+
+    /* =====================================================================
+       PENGENDALI TAB KHUSUS GURU / TIM KURIKULUM
+       ===================================================================== */
+    const _origSwitchTab = switchTab;
+    switchTab = function(tabName) {
+      _origSwitchTab(tabName);
+      if (tabName === 'guru') {
+        loadMonitoringGuruData(false);
+      }
+    };
+
+    function switchGuruSubTab(subName) {
+      document.getElementById('guruPillPrioritas').classList.toggle('active', subName === 'prioritas');
+      document.getElementById('guruPillRequest').classList.toggle('active', subName === 'request');
+      document.getElementById('guruPillKelas').classList.toggle('active', subName === 'kelas');
+
+      document.getElementById('guruPanelPrioritas').style.display = subName === 'prioritas' ? 'block' : 'none';
+      document.getElementById('guruPanelRequest').style.display = subName === 'request' ? 'block' : 'none';
+      document.getElementById('guruPanelKelas').style.display = subName === 'kelas' ? 'block' : 'none';
+    }
+
+    async function loadMonitoringGuruData(forceRefresh) {
+      if (appState.guruMonitoringData && !forceRefresh) {
+        renderSemuaPanelGuru();
+        return;
+      }
+
+      try {
+        const url = `${API_URL}?action=monitoring_guru&periode=${encodeURIComponent(appState.periode || '2026-27')}`;
+        const res = await fetch(url, { method: 'GET', redirect: 'follow' });
+        const data = await res.json();
+        if (data.status === 'ok') {
+          appState.guruMonitoringData = data;
+          renderSemuaPanelGuru();
+        }
+      } catch (e) {}
+    }
+
+    function renderSemuaPanelGuru() {
+      const d = appState.guruMonitoringData || {};
+      document.getElementById('guruCountPrioritas').textContent = (d.prioritas_pendampingan || []).length;
+      document.getElementById('guruCountRequest').textContent = (d.request_pembahasan || []).length;
+
+      renderTabelPrioritasGuru();
+      renderDaftarRequestGuru();
+      renderTabelRekapKelasGuru();
+    }
+
+    function renderTabelPrioritasGuru() {
+      const d = appState.guruMonitoringData || {};
+      const list = d.prioritas_pendampingan || [];
+      const kelasFilter = document.getElementById('filterGuruKelasPrioritas').value;
+      const filtered = kelasFilter === 'ALL' ? list : list.filter(x => x.rombel === kelasFilter);
+
+      const tbody = document.getElementById('tbodyGuruPrioritas');
+      if (!filtered.length) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--text-soft);">Tidak ada siswa yang masuk kriteria prioritas pendampingan pada filter ini.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(s => `
+        <tr>
+          <td>${escapeHtml(s.nis)}</td>
+          <td><strong>${escapeHtml(s.nama)}</strong></td>
+          <td><span class="badge badge-neutral">${escapeHtml(s.rombel)}</span></td>
+          <td>${s.riwayat_nilai.join(' → ')}</td>
+          <td><strong style="color:var(--danger);">${s.nilai_terakhir.toFixed(2)}</strong></td>
+          <td><span class="badge badge-danger">${escapeHtml(s.alasan)}</span></td>
+        </tr>
+      `).join('');
+    }
+
+    function renderDaftarRequestGuru() {
+      const d = appState.guruMonitoringData || {};
+      const list = d.request_pembahasan || [];
+      const container = document.getElementById('guruRequestListContainer');
+
+      if (!list.length) {
+        container.innerHTML = `<div class="empty-state">Belum ada pengajuan pembahasan soal baru dari siswa.</div>`;
+        return;
+      }
+
+      container.innerHTML = list.map(req => `
+        <div style="border:1px solid var(--border); border-left:4px solid var(--accent); border-radius:12px; padding:16px; background:#FAFCFB;">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap; margin-bottom:8px;">
+            <div>
+              <span class="badge badge-warning">Diajukan oleh ${req.jumlah_siswa} Siswa</span>
+              <span class="badge badge-info" style="margin-left:6px;">${escapeHtml(req.materi)}</span>
+              <h4 style="font-size:15px; font-weight:800; margin-top:6px;">${escapeHtml(req.judul_paket)} — Soal No. ${escapeHtml(req.no_soal)}</h4>
+            </div>
+            <button type="button" class="btn btn-primary btn-sm"
+              onclick="tandaiRequestSudahDibahas('${escapeHtml(req.id_paket)}', '${escapeHtml(req.no_soal)}')">
+              ✓ Tandai Sudah Dibahas di Kelas
+            </button>
+          </div>
+          <p style="font-size:13.5px; color:var(--text); margin-bottom:8px;">"${escapeHtml(req.cuplikan)}..."</p>
+          <div style="font-size:12px; color:var(--text-soft);">
+            <strong>Siswa yang bertanya:</strong> ${escapeHtml(req.daftar_siswa.join(', '))}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    async function tandaiRequestSudahDibahas(idPaket, noSoal) {
+      try {
+        const params = new URLSearchParams({
+          action: 'selesai_request_pembahasan',
+          id_paket: idPaket,
+          no_soal: noSoal
+        });
+        await fetch(`${API_URL}?${params.toString()}`, { method: 'GET', redirect: 'follow' });
+        loadMonitoringGuruData(true);
+      } catch (e) {}
+    }
+
+    function renderTabelRekapKelasGuru() {
+      const d = appState.guruMonitoringData || {};
+      const perKelas = d.rekap_per_kelas || {};
+      const kelas = document.getElementById('filterGuruKelasRekap').value;
+      const list = perKelas[kelas] || [];
+
+      const tbody = document.getElementById('tbodyGuruRekapKelas');
+      if (!list.length) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--text-soft);">Belum ada data siswa pada kelas ${escapeHtml(kelas)}.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = list.map(st => `
+        <tr>
+          <td><strong>${escapeHtml(st.nama)}</strong><br><span style="font-size:11.5px; color:var(--text-soft);">NIS: ${escapeHtml(st.nis)}</span></td>
+          <td>${st.total_sesi} Sesi</td>
+          <td><span class="streak-pill">🔥 ${st.streak || 0} Hari</span></td>
+          <td><strong>${st.rata_skor !== null ? st.rata_skor : '-'}</strong></td>
+          <td>${st.paket_selesai && st.paket_selesai.length ? escapeHtml(st.paket_selesai.join(', ')) : '<span style="color:var(--text-soft);">Belum pernah latihan</span>'}</td>
+        </tr>
+      `).join('');
     }
   </script>
 </body>
