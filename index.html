@@ -4632,37 +4632,74 @@ function resolveCbtImageUrl(raw) {
 
     // Override renderDaftarPaketCBT agar mendukung Micro Drill Harian & Lencana Skor Terbaik
     const _origRenderDaftarPaketCBT = renderDaftarPaketCBT;
+    function normalizeIsoDateOnly(rawVal) {
+      if (!rawVal) return '';
+      const str = String(rawVal).trim();
+      const match = str.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/);
+      if (match) {
+        return `${match[1]}-${match[2].padStart(2, '0')}-${match[3].padStart(2, '0')}`;
+      }
+      const d = new Date(str);
+      if (!isNaN(d.getTime())) {
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${y}-${m}-${day}`;
+      }
+      return '';
+    }
+
+    function getTodayLocalIso() {
+      const now = new Date();
+      const y = now.getFullYear();
+      const m = String(now.getMonth() + 1).padStart(2, '0');
+      const d = String(now.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    }
+
+    function isJenisDailyStreak(jenis) {
+      const j = String(jenis || '').trim().toUpperCase();
+      return j === 'MICRO_DRILL' || j === 'DAILY_STREAK' || j.includes('DAILY') || j.includes('MICRO');
+    }
+
     renderDaftarPaketCBT = function(paketList) {
       appState.cbtPaketList = paketList || [];
       const container = document.getElementById('paketLatihanContainer');
       const microBox = document.getElementById('microDrillBannerBox');
       const prog = appState.siswaProgress || {};
       const terbaikMap = prog.paket_terbaik || {};
+      const todayIso = getTodayLocalIso();
 
-      // Cari paket Micro Drill (hari ini atau terbaru)
-      const todayIso = new Date().toISOString().slice(0, 10);
-      let microIdx = appState.cbtPaketList.findIndex(p =>
-        String(p.jenis_paket || '').toUpperCase() === 'MICRO_DRILL' &&
-        String(p.tanggal_tayang || '').startsWith(todayIso)
+      // Hanya tampilkan paket yang belum punya TANGGAL_TAYANG atau TANGGAL_TAYANG <= hari ini
+      const visiblePaketWithIdx = appState.cbtPaketList
+        .map((p, idx) => ({ p, idx }))
+        .filter(({ p }) => {
+          const tglTayang = normalizeIsoDateOnly(p.tanggal_tayang);
+          if (!tglTayang) return true;
+          return tglTayang <= todayIso;
+        });
+
+      // Cari paket Daily Streak / Micro Drill yang tayang hari ini (atau aktif terbaru <= hari ini)
+      let microEntry = visiblePaketWithIdx.find(({ p }) =>
+        isJenisDailyStreak(p.jenis_paket) && normalizeIsoDateOnly(p.tanggal_tayang) === todayIso
       );
-      if (microIdx === -1) {
-        microIdx = appState.cbtPaketList.findIndex(p => String(p.jenis_paket || '').toUpperCase() === 'MICRO_DRILL');
+      if (!microEntry) {
+        microEntry = visiblePaketWithIdx.find(({ p }) => isJenisDailyStreak(p.jenis_paket));
       }
 
-      if (microIdx !== -1 && microBox) {
-        const md = appState.cbtPaketList[microIdx];
+      if (microEntry && microBox) {
+        const md = microEntry.p;
         microBox.style.display = 'flex';
         document.getElementById('microDrillTitle').textContent = `${md.judul} (${md.mapel})`;
         document.getElementById('microDrillDesc').textContent =
           `${md.jumlah_soal} Soal Kilat • Waktu Maksimal ${md.durasi_menit} Menit — Selesaikan hari ini untuk menjaga Daily Streak Anda!`;
-        document.getElementById('btnMulaiMicroDrill').onclick = () => mulaiPaketCBT(microIdx);
+        document.getElementById('btnMulaiMicroDrill').onclick = () => mulaiPaketCBT(microEntry.idx);
       } else if (microBox) {
         microBox.style.display = 'none';
       }
 
-      const regulerItems = appState.cbtPaketList
-        .map((p, idx) => ({ p, idx }))
-        .filter(({ p }) => String(p.jenis_paket || 'REGULER').toUpperCase() !== 'MICRO_DRILL');
+      // Paket reguler (bukan Daily Streak / Micro Drill)
+      const regulerItems = visiblePaketWithIdx.filter(({ p }) => !isJenisDailyStreak(p.jenis_paket));
 
       if (!regulerItems.length) {
         container.innerHTML = `<div class="empty-state" style="grid-column:1/-1;">Belum ada paket latihan CBT reguler yang aktif pada periode ini.</div>`;
