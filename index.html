@@ -4060,26 +4060,28 @@ function resolveCbtImageUrl(raw) {
       } catch (e) {}
 
       renderHasilDanPembahasanCBT(resultPayload, true);
+
       const isGuruMode = appState.portalUser && appState.portalUser.role === 'guru';
       if (!isGuruMode) {
-      const saveParams = new URLSearchParams({
-        action: 'simpan_hasil_cbt',
-        periode: appState.periode || '2026-27',
-        nis: student.nis,
-        nama: student.nama,
-        id_paket: paket.id_paket || '-',
-        judul_paket: paket.judul || '-',
-        mapel: paket.mapel || '-',
-        durasi: durasiTeks,
-        benar: String(benar),
-        total_soal: String(total),
-        skor: String(skor),
-        predikat: predikat,
-        dikuasai: teksDikuasai,
-        perbaikan: teksPerbaikan,
-        pelanggaran: jumlahPelanggaran
-      });
-      kirimHasilCbtDenganRetry(saveParams.toString());
+        const saveParams = new URLSearchParams({
+          action: 'simpan_hasil_cbt',
+          periode: appState.periode || '2026-27',
+          nis: student.nis,
+          nama: student.nama,
+          id_paket: paket.id_paket || '-',
+          judul_paket: paket.judul || '-',
+          mapel: paket.mapel || '-',
+          durasi: durasiTeks,
+          benar: String(benar),
+          total_soal: String(total),
+          skor: String(skor),
+          predikat: predikat,
+          dikuasai: teksDikuasai,
+          perbaikan: teksPerbaikan,
+          pelanggaran: jumlahPelanggaran
+        });
+        kirimHasilCbtDenganRetry(saveParams.toString());
+      }
     }
 
     function renderHasilDanPembahasanCBT(payload, showModal) {
