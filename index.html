@@ -1907,16 +1907,21 @@
         <p>Memuat paket latihan soal CBT...</p>
       </div>
 
-      <!-- BANNER AKSES ULANG HASIL CBT TERAKHIR (JIKA TERLUPA / TERTUTUP) -->
+      <!-- BANNER AKSES ULANG HASIL CBT TERAKHIR -->
       <div id="cbtSavedHistoryBanner" class="card" style="display:none; background:#F0FDF4; border-color:var(--primary-border);">
         <div class="card-header" style="margin-bottom:0;">
           <div>
             <div class="card-title" style="font-size:15.5px; color:var(--primary-dark);">Riwayat Hasil &amp; Pembahasan Latihan Tersimpan</div>
             <div class="card-subtitle" id="cbtSavedHistoryDesc">Anda memiliki hasil latihan CBT yang tersimpan di perangkat ini.</div>
           </div>
-          <button type="button" class="btn btn-primary btn-sm" onclick="bukaKembaliHasilCbtTersimpan()">
-            Buka Hasil &amp; Download PDF Pembahasan
-          </button>
+          <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+            <button type="button" class="btn btn-primary btn-sm" onclick="bukaKembaliHasilCbtTersimpan()">
+              Buka Hasil &amp; Download PDF Pembahasan
+            </button>
+            <button type="button" class="btn btn-outline btn-sm" onclick="tutupBannerRiwayatCbt()" title="Tutup notifikasi ini">
+              Tutup
+            </button>
+          </div>
         </div>
       </div>
 
@@ -3690,6 +3695,14 @@
       }
     }
 
+    function tutupBannerRiwayatCbt() {
+      const banner = document.getElementById('cbtSavedHistoryBanner');
+      if (banner) banner.style.display = 'none';
+      try {
+        localStorage.removeItem(CBT_LAST_RESULT_STORAGE_KEY);
+      } catch (e) {}
+    }
+
     function bukaKembaliHasilCbtTersimpan() {
       try {
         const raw = localStorage.getItem(CBT_LAST_RESULT_STORAGE_KEY);
@@ -3697,6 +3710,8 @@
         const saved = JSON.parse(raw);
         if (!saved || !saved.paket) return;
 
+        const banner = document.getElementById('cbtSavedHistoryBanner');
+        if (banner) banner.style.display = 'none';
         renderHasilDanPembahasanCBT(saved, false);
       } catch (e) {}
     }
@@ -4249,6 +4264,7 @@ function resolveCbtImageUrl(raw) {
         });
 
         doc.save(fileName);
+        tutupBannerRiwayatCbt();
       } finally {
         if (btn && !silentMode) {
           btn.disabled = false;
@@ -4464,6 +4480,7 @@ function resolveCbtImageUrl(raw) {
                 ? Masih bingung soal ini? Ajukan ke Guru
               </button>
             </div>
+          </div>  
         `;
       }).join('');
 
