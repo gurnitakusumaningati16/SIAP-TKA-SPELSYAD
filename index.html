@@ -1826,6 +1826,34 @@
         </div>
       </div>
 
+       <!-- RIWAYAT LATIHAN MANDIRI CBT ANANDA (UNTUK ORANG TUA & SISWA) -->
+        <div class="card" id="cardRiwayatCbtSiswa">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Log Aktivitas Latihan Mandiri CBT Ananda</div>
+              <div class="card-subtitle">Pantauan keaktifan berlatih soal mandiri di rumah beserta capaian skornya</div>
+            </div>
+            <span id="laporanStreakBadge" class="streak-pill">🔥 Streak: 0 Hari</span>
+          </div>
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>Tanggal</th>
+                  <th>Paket Latihan</th>
+                  <th>Mapel</th>
+                  <th>Durasi</th>
+                  <th>Skor</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="tbodyRiwayatCbtSiswa">
+                <tr><td colspan="6" style="text-align:center; color:var(--text-soft);">Belum ada riwayat latihan mandiri CBT.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
         <!-- HASIL TKA RESMI (JIKA SUDAH ADA) -->
         <div class="card" id="cardHasilTKA" style="display:none;">
           <div class="card-header">
@@ -4366,10 +4394,13 @@ function resolveCbtImageUrl(raw) {
         });
         kirimHasilCbtDenganRetry(saveParams.toString()).then(() => {
           if (appState.portalUser && appState.portalUser.siswa) {
+            kirimHasilCbtDenganRetry(saveParams.toString()).then(() => {
+          if (appState.portalUser && appState.portalUser.siswa) {
             loadProgressDanLeaderboardSiswa(appState.portalUser.siswa.nis, appState.portalUser.siswa.nisn);
           }
         });
       }
+    }
 
     function renderHasilDanPembahasanCBT(payload, showModal) {
       const {
