@@ -3560,15 +3560,15 @@
         document.getElementById('cbtStartPaketInfo').innerHTML =
           `Paket: <strong>${escapeHtml(paket.judul)}</strong> (${paket.jumlah_soal} Soal • ${paket.durasi_menit} Menit).<br>Identitas peserta terverifikasi otomatis sesuai NISN Ananda.`;
       } else {
-        inputNama.value = '';
-        inputNis.value = '';
+        inputNama.value = 'Pratinjau Guru / Kurikulum';
+        inputNis.value = 'GURU-PREVIEW';
         inputNama.readOnly = false;
         inputNis.readOnly = false;
         inputNama.style.background = '#FFFFFF';
         inputNis.style.background = '#FFFFFF';
 
         document.getElementById('cbtStartPaketInfo').innerHTML =
-          `Paket: <strong>${escapeHtml(paket.judul)}</strong> (${paket.jumlah_soal} Soal • ${paket.durasi_menit} Menit).<br>Masukkan Nama Lengkap dan NIS Anda sebelum memulai.`;
+          `Paket: <strong>${escapeHtml(paket.judul)}</strong> (${paket.jumlah_soal} Soal • ${paket.durasi_menit} Menit).<br><span style="color:#B45309; font-weight:600;">Mode Pratinjau Guru: Hasil uji coba tidak akan dicatat ke spreadsheet rekap siswa.</span>`;
       }
 
       document.getElementById('cbtStartModal').classList.add('open');
@@ -4060,7 +4060,8 @@ function resolveCbtImageUrl(raw) {
       } catch (e) {}
 
       renderHasilDanPembahasanCBT(resultPayload, true);
-
+      const isGuruMode = appState.portalUser && appState.portalUser.role === 'guru';
+      if (!isGuruMode) {
       const saveParams = new URLSearchParams({
         action: 'simpan_hasil_cbt',
         periode: appState.periode || '2026-27',
@@ -4178,8 +4179,10 @@ function resolveCbtImageUrl(raw) {
       document.getElementById('btnBottomShareEmail').href = mailHref;
 
       if (showModal) {
-        document.getElementById('cbtShareSummaryText').innerHTML =
-          `<strong>${escapeHtml(student.nama)}</strong> (NIS: ${escapeHtml(student.nis)}) — Skor: <strong>${skor}</strong> (${predikat}). Data otomatis tersimpan ke rekap guru.`;
+        const isGuruMode = appState.portalUser && appState.portalUser.role === 'guru';
+        document.getElementById('cbtShareSummaryText').innerHTML = isGuruMode
+          ? `<strong>Mode Pratinjau Guru</strong> — Skor: <strong>${skor}</strong> (${predikat}). Hasil uji coba ini <strong>tidak disimpan</strong> ke database rekap siswa.`
+          : `<strong>${escapeHtml(student.nama)}</strong> (NIS: ${escapeHtml(student.nis)}) — Skor: <strong>${skor}</strong> (${predikat}). Data otomatis tersimpan ke rekap guru.`;
         document.getElementById('cbtShareModal').classList.add('open');
       }
     }
