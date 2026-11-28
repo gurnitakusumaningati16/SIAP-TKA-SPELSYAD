@@ -2268,6 +2268,23 @@
     </div>
   </div>
 
+<!-- MODAL PERBESAR GAMBAR SOAL (LIGHTBOX AMAN SAAT UJIAN) -->
+  <div id="cbtImageZoomModal" class="modal-backdrop" style="z-index: 2500; background: rgba(15, 23, 42, 0.88);" onclick="if(event.target === this) closeCbtImageZoom()">
+    <div style="background: #FFFFFF; width: 95vw; max-width: 1100px; height: 90vh; border-radius: 16px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);">
+      <div class="modal-header" style="background: var(--primary-dark);">
+        <div class="modal-title">Pratinjau Gambar Soal</div>
+        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+          <button type="button" class="btn btn-ghost-light btn-sm" onclick="adjustCbtImageZoom(-0.25)">Perkecil (-)</button>
+          <button type="button" class="btn btn-ghost-light btn-sm" onclick="resetCbtImageZoom()">100%</button>
+          <button type="button" class="btn btn-ghost-light btn-sm" onclick="adjustCbtImageZoom(0.25)">Perbesar (+)</button>
+          <button type="button" class="btn btn-accent btn-sm" onclick="closeCbtImageZoom()">Tutup</button>
+        </div>
+      </div>
+      <div style="flex: 1; overflow: auto; background: #1E293B; display: flex; align-items: center; justify-content: center; padding: 16px;">
+        <img id="cbtZoomModalImg" src="" alt="Gambar Soal Diperbesar" style="max-width: 100%; max-height: 100%; transform-origin: center center; transition: transform 0.15s ease; border-radius: 8px; background: #FFFFFF;" />
+      </div>
+    </div>
+  </div>
   <!-- FOOTER -->
   <footer>
     <div class="footer-inner">
