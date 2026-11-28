@@ -2396,6 +2396,8 @@
       });
     });
 
+
+
     function checkPortalGatekeeper() {
       try {
         const raw = localStorage.getItem(PORTAL_AUTH_STORAGE_KEY);
@@ -3327,6 +3329,31 @@
     }
 
     function closeDocModal() {
+      let cbtZoomScale = 1;
+
+    function openCbtImageZoom(imgSrc) {
+      if (!imgSrc) return;
+      cbtZoomScale = 1;
+      const imgEl = document.getElementById('cbtZoomModalImg');
+      imgEl.src = imgSrc;
+      imgEl.style.transform = 'scale(1)';
+      document.getElementById('cbtImageZoomModal').classList.add('open');
+    }
+
+    function adjustCbtImageZoom(delta) {
+      cbtZoomScale = Math.min(3, Math.max(0.5, cbtZoomScale + delta));
+      document.getElementById('cbtZoomModalImg').style.transform = `scale(${cbtZoomScale})`;
+    }
+
+    function resetCbtImageZoom() {
+      cbtZoomScale = 1;
+      document.getElementById('cbtZoomModalImg').style.transform = 'scale(1)';
+    }
+
+    function closeCbtImageZoom() {
+      document.getElementById('cbtImageZoomModal').classList.remove('open');
+      document.getElementById('cbtZoomModalImg').src = '';
+    }
       const modal = document.getElementById('docPreviewModal');
       modal.classList.remove('open');
       document.getElementById('docModalIframe').src = '';
@@ -4094,10 +4121,18 @@ function resolveCbtImageUrl(raw) {
           const rawIdMatch = String(soal.gambar_url).match(/[-\w]{25,}/);
           const fallbackSrc = rawIdMatch ? `https://drive.google.com/thumbnail?id=${rawIdMatch[0]}&sz=w1000` : '';
           return `<div style="margin-bottom:14px; text-align:center;">
-            <img src="${escapeHtml(imgSrc)}"
-                 onerror="if(this.dataset.retried!=='1' && '${escapeHtml(fallbackSrc)}'){this.dataset.retried='1';this.src='${escapeHtml(fallbackSrc)}';}"
-                 alt="Ilustrasi Soal"
-                 style="max-width:100%; max-height:340px; border-radius:10px; border:1px solid var(--border); background:#FFFFFF;" />
+            <div style="display:inline-block; position:relative; cursor:zoom-in;" onclick="openCbtImageZoom(this.querySelector('img').src)">
+              <img src="${escapeHtml(imgSrc)}"
+                   onerror="if(this.dataset.retried!=='1' && '${escapeHtml(fallbackSrc)}'){this.dataset.retried='1';this.src='${escapeHtml(fallbackSrc)}';}"
+                   alt="Ilustrasi Soal"
+                   title="Klik untuk memperbesar gambar"
+                   style="max-width:100%; max-height:340px; border-radius:10px; border:1px solid var(--border); background:#FFFFFF; display:block;" />
+              <div style="margin-top:6px;">
+                <button type="button" class="btn btn-outline btn-sm" style="font-size:12px; padding:4px 12px;">
+                  🔍 Klik Gambar untuk Memperbesar
+                </button>
+              </div>
+            </div>
           </div>`;
         })() : ''}
         <div style="font-size:15px; font-weight:600; color:var(--text);">${escapeHtml(soal.pertanyaan)}</div>
