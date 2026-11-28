@@ -3329,7 +3329,11 @@
     }
 
     function closeDocModal() {
-      let cbtZoomScale = 1;
+      const modal = document.getElementById('docPreviewModal');
+      modal.classList.remove('open');
+      document.getElementById('docModalIframe').src = '';
+    }
+    let cbtZoomScale = 1;
 
     function openCbtImageZoom(imgSrc) {
       if (!imgSrc) return;
@@ -3353,10 +3357,6 @@
     function closeCbtImageZoom() {
       document.getElementById('cbtImageZoomModal').classList.remove('open');
       document.getElementById('cbtZoomModalImg').src = '';
-    }
-      const modal = document.getElementById('docPreviewModal');
-      modal.classList.remove('open');
-      document.getElementById('docModalIframe').src = '';
     }
 
     /* =====================================================================
